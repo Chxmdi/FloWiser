@@ -8,6 +8,11 @@ const parseLimit = (value: unknown) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 100;
 };
 
+const parseMinQualityScore = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 export const telemetryRouter = Router();
 
 telemetryRouter.get("/decoders", (_request, response) => {
@@ -28,6 +33,13 @@ telemetryRouter.get("/events", async (request, response) => {
     deviceId: request.query.deviceId as string | undefined,
     from: request.query.from as string | undefined,
     to: request.query.to as string | undefined,
+    qualityStatus: request.query.qualityStatus as
+      | "unknown"
+      | "good"
+      | "suspicious"
+      | "bad"
+      | undefined,
+    minQualityScore: parseMinQualityScore(request.query.minQualityScore),
     limit: parseLimit(request.query.limit)
   });
 

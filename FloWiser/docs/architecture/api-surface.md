@@ -6,32 +6,24 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /` — foundation alive message
 - `GET /health` — health payload for CI and platform checks
 - `GET /telemetry/decoders` — list supported decoder adapters
-- `GET /telemetry/events` — query persisted normalized telemetry events by event id, device id, and time range
-- `POST /telemetry/decode-preview` — validate and normalize a raw telemetry payload
+- `GET /telemetry/events` — query persisted normalized telemetry events by event id, device id, time range, and quality filters
+- `POST /telemetry/decode-preview` — validate, normalize, and quality-check a raw telemetry payload
 - `GET /raw-events/:rawEventId` — inspect an archived raw payload and parse outcome
 - `GET /raw-events` — query persisted raw events by device id and time range
-- `POST /ingestion/process` — process a transport envelope through source validation, dedupe, decoding, and ordering checks
+- `POST /ingestion/process` — process a transport envelope through source validation, dedupe, decoding, ordering checks, and persistence
 - `GET /ingestion/dead-letter` — list dead-letter entries produced by ingestion
 - `GET /ingestion/dead-letter/:entryId` — inspect a specific dead-letter entry
-- `GET /registry/snapshot` — inspect the full in-memory registry state
-- `GET /registry/tenants` and `POST /registry/tenants`
-- `GET /registry/branches` and `POST /registry/branches`
-- `GET /registry/sites` and `POST /registry/sites`
-- `GET /registry/assets` and `POST /registry/assets`
-- `GET /registry/devices` and `POST /registry/devices`
-- `GET /registry/device-bindings` and `POST /registry/device-bindings`
-- `POST /registry/device-bindings/:bindingId/remap`
-- `POST /registry/device-bindings/:bindingId/unbind`
-- `POST /registry/import/hierarchy`
-
-## Near-term route map
-- `GET /alerts`
-- `POST /devices/register`
-- `GET /sites/:siteId/telemetry`
+- `GET /registry/snapshot` — inspect current registry entities and bindings
+- registry CRUD and bind/remap/unbind routes
+- `GET /quality/metrics` — inspect aggregate telemetry quality metrics
+- `POST /quality/re-evaluate/:eventId` — recompute quality for a persisted telemetry event
+- `GET /state/devices/:deviceId` — inspect device state, freshness, and connectivity confidence
+- `GET /state/sites/:siteId` — inspect site state, freshness, and connectivity confidence
+- `GET /state/branches/:branchId` — inspect branch state, freshness, and connectivity confidence
 
 ## API principles
 - resource-oriented routes
-- explicit versioning when the first external contract is published
+- explicit versioning once the first external contract is published
 - tenant scope enforced before business logic
 - errors returned in a stable envelope
 - raw payload inspection available for decoder debugging

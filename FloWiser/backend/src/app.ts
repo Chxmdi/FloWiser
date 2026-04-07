@@ -4,6 +4,8 @@ import { rawEventsRouter } from "./routes/raw-events.js";
 import { telemetryRouter } from "./routes/telemetry.js";
 import { ingestionRouter } from "./routes/ingestion.js";
 import { registryRouter } from "./routes/registry.js";
+import { qualityRouter } from "./routes/quality.js";
+import { stateRouter } from "./routes/state.js";
 
 export const createApp = () => {
   const app = express();
@@ -21,6 +23,8 @@ export const createApp = () => {
   app.use("/raw-events", rawEventsRouter);
   app.use("/ingestion", ingestionRouter);
   app.use("/registry", registryRouter);
+  app.use("/quality", qualityRouter);
+  app.use("/state", stateRouter);
 
   return app;
 };
