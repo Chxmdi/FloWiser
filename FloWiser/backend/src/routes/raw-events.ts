@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { rawEventArchiveService } from "./telemetry.js";
+import { platformServices } from "../modules/platform/platform-services.js";
 
 export const rawEventsRouter = Router();
 
 rawEventsRouter.get("/:rawEventId", (request, response) => {
   try {
-    const record = rawEventArchiveService.getById(request.params.rawEventId);
+    const record = platformServices.rawEventArchiveService.getById(request.params.rawEventId);
     return response.status(200).json(record);
   } catch (error) {
     return response.status(404).json({
