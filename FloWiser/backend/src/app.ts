@@ -3,6 +3,7 @@ import { healthRouter } from "./routes/health.js";
 import { rawEventsRouter } from "./routes/raw-events.js";
 import { telemetryRouter } from "./routes/telemetry.js";
 import { ingestionRouter } from "./routes/ingestion.js";
+import { registryRouter } from "./routes/registry.js";
 
 export const createApp = () => {
   const app = express();
@@ -19,6 +20,7 @@ export const createApp = () => {
   app.use("/telemetry", telemetryRouter);
   app.use("/raw-events", rawEventsRouter);
   app.use("/ingestion", ingestionRouter);
+  app.use("/registry", registryRouter);
 
   return app;
 };
