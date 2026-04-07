@@ -1,0 +1,23 @@
+{
+  "vendor": "Satec",
+  "model": "PM130",
+  "firmware": "2.7.0",
+  "tsEpochMs": 1775566500000,
+  "sequence": 77,
+  "channels": [
+    { "code": "P_TOTAL_W", "value": 27450 },
+    { "code": "E_IMPORT_WH_TOTAL", "value": 198765400 },
+    { "code": "V_L1", "value": 229.2 },
+    { "code": "V_L2", "value": 228.7 },
+    { "code": "V_L3", "value": 229.5 },
+    { "code": "I_L1", "value": 38.4 },
+    { "code": "I_L2", "value": 37.8 },
+    { "code": "I_L3", "value": 39.0 },
+    { "code": "FREQ_HZ", "value": 50.1 },
+    { "code": "PF_TOTAL", "value": 0.94 }
+  ],
+  "flags": {
+    "online": 1,
+    "tamper": 0
+  }
+}

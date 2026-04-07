@@ -1,0 +1,25 @@
+{
+  "vendor": "AcmePower",
+  "model": "MTR-3P",
+  "firmware": "1.4.2",
+  "timestamp": "2026-04-07T11:57:00Z",
+  "seq": 10492,
+  "measurements": {
+    "activePowerKw": 42.7,
+    "totalEnergyKwh": 120394.1,
+    "voltageL1": 228.3,
+    "voltageL2": 227.9,
+    "voltageL3": 229.1,
+    "currentL1": 61.2,
+    "currentL2": 60.8,
+    "currentL3": 62.1,
+    "frequencyHz": 49.9,
+    "powerFactor": 0.91
+  },
+  "status": {
+    "online": true,
+    "tamper": false,
+    "gridAvailable": true,
+    "generatorRunning": false
+  }
+}
