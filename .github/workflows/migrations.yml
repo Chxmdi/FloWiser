@@ -1,0 +1,41 @@
+name: database-migrations
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "FloWiser/backend/db/migrations/**"
+      - "FloWiser/backend/scripts/run-migrations.mjs"
+
+jobs:
+  validate-migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: flowiser
+          POSTGRES_USER: flowiser
+          POSTGRES_PASSWORD: flowiser
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flowiser -d flowiser"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run migrations against ephemeral database
+        env:
+          DATABASE_URL: postgresql://flowiser:flowiser@127.0.0.1:5432/flowiser
+        run: npm run migrations:run --workspace @flowiser/backend

@@ -1,0 +1,35 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: flowiser-timescaledb
+    environment:
+      POSTGRES_DB: flowiser
+      POSTGRES_USER: flowiser
+      POSTGRES_PASSWORD: flowiser
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: flowiser-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
+  redis:
+    image: redis:7-alpine
+    container_name: flowiser-redis
+    ports:
+      - "6379:6379"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: flowiser-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  timescaledb-data:

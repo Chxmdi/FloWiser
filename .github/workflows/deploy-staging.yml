@@ -1,0 +1,47 @@
+name: deploy-staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: npm run migrations:run --workspace @flowiser/backend
+
+      - name: Staging deployment hook
+        env:
+          STAGING_DEPLOY_URL: ${{ secrets.STAGING_DEPLOY_URL }}
+        run: |
+          if [ -n "$STAGING_DEPLOY_URL" ]; then
+            curl -X POST "$STAGING_DEPLOY_URL"
+          else
+            echo "No STAGING_DEPLOY_URL configured. Build + migrations completed."
+          fi
+
+      - name: Notify on failure
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"FloWiser staging deployment failed on '${{ github.ref_name }}'."}' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"

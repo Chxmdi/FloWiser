@@ -1,0 +1,46 @@
+name: deploy-preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    environment: preview
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate workspace
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run build
+
+      - name: Package preview artifacts
+        run: |
+          tar -czf flowiser-preview.tar.gz FloWiser/frontend FloWiser/backend
+
+      - name: Upload preview bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: flowiser-preview
+          path: flowiser-preview.tar.gz
+
+      - name: Preview deployment hook
+        env:
+          PREVIEW_DEPLOY_URL: ${{ secrets.PREVIEW_DEPLOY_URL }}
+        run: |
+          if [ -n "$PREVIEW_DEPLOY_URL" ]; then
+            curl -X POST "$PREVIEW_DEPLOY_URL"
+          else
+            echo "No PREVIEW_DEPLOY_URL configured. Artifact-only preview completed."
+          fi

@@ -1,0 +1,26 @@
+{
+  "name": "flowiser-repo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "FloWiser/frontend",
+    "FloWiser/backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c magenta,cyan \"npm run dev --workspace @flowiser/backend\" \"npm run dev --workspace @flowiser/frontend\"",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "dev:backend": "npm run dev --workspace @flowiser/backend",
+    "dev:frontend": "npm run dev --workspace @flowiser/frontend",
+    "migrations:run": "npm run migrations:run --workspace @flowiser/backend"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.20.1",
+    "globals": "^15.14.0",
+    "typescript-eslint": "^8.24.0"
+  }
+}

@@ -1,0 +1,5 @@
+aws_region         = "eu-west-1"
+vpc_id             = "vpc-xxxxxxxx"
+private_subnet_ids = ["subnet-aaaa", "subnet-bbbb"]
+db_username        = "flowiser"
+db_password        = "replace-me"

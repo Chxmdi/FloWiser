@@ -1,0 +1,60 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 2,
+      "properties": {
+        "markdown": "# FloWiser platform dashboard\nStarter dashboard for ingestion, API, and queue health."
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 2,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "Ingestion errors",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/Lambda", "Errors", "FunctionName", "flowiser-ingestion"]
+        ],
+        "region": "eu-west-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 2,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "API latency",
+        "view": "timeSeries",
+        "metrics": [
+          ["AWS/ApiGateway", "Latency", "ApiName", "flowiser-api"]
+        ],
+        "region": "eu-west-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 2,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "DLQ backlog",
+        "view": "timeSeries",
+        "metrics": [
+          ["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", "flowiser-ingestion-dlq"]
+        ],
+        "region": "eu-west-1"
+      }
+    }
+  ]
+}
