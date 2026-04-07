@@ -9,11 +9,13 @@ import { DecodePreviewError } from "../decoders/errors.js";
 import type { DecoderRegistry } from "../decoders/registry.js";
 import { RawEventArchiveService } from "../raw-events/raw-event-archive.service.js";
 import { resolveReceivedAt } from "../normalization/timestamps.js";
+import { TelemetryQualityService } from "../quality/telemetry-quality.service.js";
 
 export class TelemetryDecodeService {
   constructor(
     private readonly decoderRegistry: DecoderRegistry,
-    private readonly rawEventArchiveService: RawEventArchiveService
+    private readonly rawEventArchiveService: RawEventArchiveService,
+    private readonly telemetryQualityService: TelemetryQualityService
   ) {}
 
   decodePreview(input: TelemetryDecodeRequest): DecodePreviewResult {
@@ -33,16 +35,17 @@ export class TelemetryDecodeService {
         decoderAuditId: decoderAudit.decoderAuditId
       });
 
-      canonicalTelemetryEventSchema.parse(canonicalEvent);
+      const evaluatedEvent = this.telemetryQualityService.evaluate(canonicalEvent);
+      canonicalTelemetryEventSchema.parse(evaluatedEvent);
 
       const archived = this.rawEventArchiveService.markSuccess(
         rawEvent.rawEventId,
-        canonicalEvent.eventId,
-        canonicalEvent.decoderId
+        evaluatedEvent.eventId,
+        evaluatedEvent.decoderId
       );
 
       return {
-        canonicalEvent,
+        canonicalEvent: evaluatedEvent,
         decoderAudit,
         rawEvent: archived
       };

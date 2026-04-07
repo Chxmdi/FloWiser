@@ -6,6 +6,9 @@ import { ingestionRouter } from "./routes/ingestion.js";
 import { registryRouter } from "./routes/registry.js";
 import { qualityRouter } from "./routes/quality.js";
 import { stateRouter } from "./routes/state.js";
+import { alertsRouter } from "./routes/alerts.js";
+import { issuesRouter } from "./routes/issues.js";
+import { fieldRouter } from "./routes/field.js";
 
 export const createApp = () => {
   const app = express();
@@ -25,6 +28,9 @@ export const createApp = () => {
   app.use("/registry", registryRouter);
   app.use("/quality", qualityRouter);
   app.use("/state", stateRouter);
+  app.use("/alerts", alertsRouter);
+  app.use("/issues", issuesRouter);
+  app.use("/field", fieldRouter);
 
   return app;
 };

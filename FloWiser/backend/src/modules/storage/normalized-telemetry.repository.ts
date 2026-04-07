@@ -1,10 +1,12 @@
-import type { CanonicalTelemetryEvent } from "@flowiser/schemas";
+import type { CanonicalTelemetryEvent, QualityStatus } from "@flowiser/schemas";
 
 export type TelemetryEventQueryFilters = {
   eventId?: string;
   deviceId?: string;
   from?: string;
   to?: string;
+  qualityStatus?: QualityStatus;
+  minQualityScore?: number;
   limit?: number;
 };
 

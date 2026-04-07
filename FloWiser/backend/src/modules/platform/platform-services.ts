@@ -19,10 +19,26 @@ import { PostgresRawEventStoreRepository } from "../storage/postgres-raw-event-s
 import { PostgresRollupRepository } from "../storage/postgres-rollup.repository.js";
 import { RollupProjectionService } from "../storage/rollup-projection.service.js";
 import { StorageOrchestratorService } from "../storage/storage-orchestrator.service.js";
+import { InMemoryQualityHistoryRepository } from "../quality/in-memory-quality-history.repository.js";
+import { QualityMetricsService } from "../quality/quality-metrics.service.js";
+import { TelemetryQualityService } from "../quality/telemetry-quality.service.js";
+import { StateEngineService } from "../state/state-engine.service.js";
+import { NotificationService } from "../alerts/notification.service.js";
+import { PostgresAlertWorkflowRepository } from "../alerts/postgres-alert-workflow.repository.js";
+import { AlertWorkflowService } from "../alerts/alert-workflow.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
-const telemetryDecodeService = new TelemetryDecodeService(decoderRegistry, rawEventArchiveService);
+const qualityMetricsService = new QualityMetricsService();
+const telemetryQualityService = new TelemetryQualityService(
+  new InMemoryQualityHistoryRepository(),
+  qualityMetricsService
+);
+const telemetryDecodeService = new TelemetryDecodeService(
+  decoderRegistry,
+  rawEventArchiveService,
+  telemetryQualityService
+);
 const idempotencyService = new IdempotencyService(new InMemoryIdempotencyRepository());
 const orderingService = new OrderingService(new InMemoryOrderingStateRepository());
 const deadLetterService = new DeadLetterService(new InMemoryDeadLetterRepository());
@@ -34,28 +50,39 @@ const ingestionConsumerService = new IngestionConsumerService(
 );
 const registryService = new RegistryService(new InMemoryRegistryStore());
 
-const storageOrchestratorService = isPersistenceEnabled()
-  ? (() => {
-      const pool = getDatabasePool();
-      const currentStateRepository = new PostgresCurrentStateRepository(pool);
-      return new StorageOrchestratorService(
-        new PostgresRawEventStoreRepository(pool),
-        new PostgresNormalizedTelemetryRepository(pool),
-        new CurrentStateProjectionService(currentStateRepository),
-        new RollupProjectionService(new PostgresRollupRepository(pool))
-      );
-    })()
+const persistenceEnabled = isPersistenceEnabled();
+
+const currentStateRepository = persistenceEnabled ? new PostgresCurrentStateRepository(getDatabasePool()) : undefined;
+
+const storageOrchestratorService = persistenceEnabled && currentStateRepository
+  ? new StorageOrchestratorService(
+      new PostgresRawEventStoreRepository(getDatabasePool()),
+      new PostgresNormalizedTelemetryRepository(getDatabasePool()),
+      new CurrentStateProjectionService(currentStateRepository),
+      new RollupProjectionService(new PostgresRollupRepository(getDatabasePool())),
+      currentStateRepository
+    )
+  : undefined;
+
+const stateEngineService = currentStateRepository ? new StateEngineService(currentStateRepository) : undefined;
+const alertWorkflowRepository = persistenceEnabled ? new PostgresAlertWorkflowRepository(getDatabasePool()) : undefined;
+const alertWorkflowService = alertWorkflowRepository
+  ? new AlertWorkflowService(alertWorkflowRepository, new NotificationService(alertWorkflowRepository))
   : undefined;
 
 export const platformServices = {
   decoderRegistry,
   rawEventArchiveService,
   telemetryDecodeService,
+  telemetryQualityService,
+  qualityMetricsService,
   idempotencyService,
   orderingService,
   deadLetterService,
   ingestionConsumerService,
   registryService,
   storageOrchestratorService,
-  persistenceEnabled: isPersistenceEnabled()
+  stateEngineService,
+  alertWorkflowService,
+  persistenceEnabled
 };

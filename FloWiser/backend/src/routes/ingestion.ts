@@ -16,6 +16,7 @@ ingestionRouter.post("/process", async (request, response) => {
 
   const result = platformServices.ingestionConsumerService.process(parsed.data);
   let storageStatus: "persisted" | "not_configured" | "skipped" = "skipped";
+  let alertSummary: { alertCount: number; issueCount: number; skippedReason?: string } | undefined;
 
   if (result.status === "processed" && result.rawEvent && result.canonicalEvent) {
     if (platformServices.storageOrchestratorService) {
@@ -24,6 +25,15 @@ ingestionRouter.post("/process", async (request, response) => {
         result.canonicalEvent
       );
       storageStatus = "persisted";
+
+      if (platformServices.alertWorkflowService) {
+        const workflowResult = await platformServices.alertWorkflowService.generateFromTelemetry(result.canonicalEvent);
+        alertSummary = {
+          alertCount: workflowResult.alerts.length,
+          issueCount: workflowResult.issues.length,
+          skippedReason: workflowResult.skippedReason
+        };
+      }
     } else {
       storageStatus = "not_configured";
     }
@@ -37,7 +47,8 @@ ingestionRouter.post("/process", async (request, response) => {
     canonicalEventId: result.canonicalEventId,
     deadLetterEntryId: result.deadLetterEntryId,
     duplicateOfKey: result.duplicateOfKey,
-    storageStatus
+    storageStatus,
+    alertSummary
   };
 
   const statusCode = result.status === "processed" ? 201 : result.status === "dead_letter" ? 422 : 200;

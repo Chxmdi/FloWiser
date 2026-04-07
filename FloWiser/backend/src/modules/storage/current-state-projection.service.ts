@@ -2,19 +2,25 @@ import type { CanonicalTelemetryEvent } from "@flowiser/schemas";
 import type { CurrentStateRepository } from "./current-state.repository.js";
 
 const calculateHealthScore = (event: CanonicalTelemetryEvent) => {
+  let score = event.quality.score;
+
   if (!event.status.meterOnline) {
-    return 60;
+    score -= 20;
   }
 
   if (event.quality.status === "bad") {
-    return 45;
+    score -= 20;
   }
 
-  if (event.quality.status === "suspicious") {
-    return 75;
+  if (event.quality.flags.includes("timestamp_drift_critical")) {
+    score -= 10;
   }
 
-  return 100;
+  if (event.quality.flags.includes("counter_reset_or_rollover")) {
+    score -= 10;
+  }
+
+  return Math.max(0, Math.min(100, score));
 };
 
 export class CurrentStateProjectionService {
@@ -22,6 +28,12 @@ export class CurrentStateProjectionService {
 
   async project(event: CanonicalTelemetryEvent) {
     const healthScore = calculateHealthScore(event);
+    const sharedQuality = {
+      qualityStatus: event.quality.status,
+      qualityScore: event.quality.score,
+      qualityFlagsCount: event.quality.flags.length,
+      openIssueCount: 0
+    };
 
     await this.repository.upsertDeviceState({
       deviceId: event.deviceId,
@@ -35,7 +47,8 @@ export class CurrentStateProjectionService {
       isOnline: event.status.meterOnline,
       generatorRunning: event.status.generatorRunning,
       gridAvailable: event.status.gridAvailable,
-      healthScore
+      healthScore,
+      ...sharedQuality
     });
 
     await this.repository.upsertSiteState({
@@ -48,7 +61,8 @@ export class CurrentStateProjectionService {
       isOnline: event.status.meterOnline,
       generatorRunning: event.status.generatorRunning,
       gridAvailable: event.status.gridAvailable,
-      healthScore
+      healthScore,
+      ...sharedQuality
     });
 
     await this.repository.upsertBranchState({
@@ -60,7 +74,8 @@ export class CurrentStateProjectionService {
       isOnline: event.status.meterOnline,
       generatorRunning: event.status.generatorRunning,
       gridAvailable: event.status.gridAvailable,
-      healthScore
+      healthScore,
+      ...sharedQuality
     });
   }
 }

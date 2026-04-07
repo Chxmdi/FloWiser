@@ -125,6 +125,16 @@ export class PostgresNormalizedTelemetryRepository implements NormalizedTelemetr
       conditions.push(`meter_timestamp <= $${values.length}`);
     }
 
+    if (filters.qualityStatus) {
+      values.push(filters.qualityStatus);
+      conditions.push(`quality->>'status' = $${values.length}`);
+    }
+
+    if (filters.minQualityScore !== undefined) {
+      values.push(filters.minQualityScore);
+      conditions.push(`(quality->>'score')::INTEGER >= $${values.length}`);
+    }
+
     values.push(filters.limit ?? 100);
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const result = await this.pool.query(
