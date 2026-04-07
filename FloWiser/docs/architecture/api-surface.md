@@ -10,7 +10,7 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `POST /telemetry/decode-preview` — validate, normalize, and quality-check a raw telemetry payload
 - `GET /raw-events/:rawEventId` — inspect an archived raw payload and parse outcome
 - `GET /raw-events` — query persisted raw events by device id and time range
-- `POST /ingestion/process` — process a transport envelope through source validation, dedupe, decoding, ordering checks, persistence, and alert generation
+- `POST /ingestion/process` — process a transport envelope through source validation, dedupe, decoding, ordering checks, persistence, rules evaluation, and alert generation
 - `GET /ingestion/dead-letter` — list dead-letter entries produced by ingestion
 - `GET /ingestion/dead-letter/:entryId` — inspect a specific dead-letter entry
 - `GET /registry/snapshot` — inspect current registry entities and bindings
@@ -33,6 +33,10 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /field/checklists`, `POST /field/checklists`, `POST /field/checklists/:checklistId/complete`
 - `GET /field/tasks`, `POST /field/tasks`, `POST /field/tasks/:taskId/complete`, `POST /field/tasks/:taskId/rollback-note`
 - `GET /field/site-visits`, `POST /field/site-visits`
+- `GET /rules` — list persisted rule configs
+- `GET /rules/:ruleId` — inspect one rule config
+- `PATCH /rules/:ruleId` — enable/disable or retune a rule
+- `GET /rules/traces` — inspect rule execution traces
 
 ## API principles
 - resource-oriented routes
@@ -42,4 +46,4 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - raw payload inspection available for decoder debugging
 - ingestion responses always return a trace id for operator triage
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow routes return `501` until `DATABASE_URL` is configured
+- persistent workflow and rules routes return `501` until `DATABASE_URL` is configured

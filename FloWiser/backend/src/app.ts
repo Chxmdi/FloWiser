@@ -9,6 +9,7 @@ import { stateRouter } from "./routes/state.js";
 import { alertsRouter } from "./routes/alerts.js";
 import { issuesRouter } from "./routes/issues.js";
 import { fieldRouter } from "./routes/field.js";
+import { rulesRouter } from "./routes/rules.js";
 
 export const createApp = () => {
   const app = express();
@@ -31,6 +32,7 @@ export const createApp = () => {
   app.use("/alerts", alertsRouter);
   app.use("/issues", issuesRouter);
   app.use("/field", fieldRouter);
+  app.use("/rules", rulesRouter);
 
   return app;
 };

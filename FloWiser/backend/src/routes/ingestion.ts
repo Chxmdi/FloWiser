@@ -17,6 +17,13 @@ ingestionRouter.post("/process", async (request, response) => {
   const result = platformServices.ingestionConsumerService.process(parsed.data);
   let storageStatus: "persisted" | "not_configured" | "skipped" = "skipped";
   let alertSummary: { alertCount: number; issueCount: number; skippedReason?: string } | undefined;
+  let ruleSummary:
+    | {
+        executedRules: number;
+        matchedRules: number;
+        matchedRuleIds: string[];
+      }
+    | undefined;
 
   if (result.status === "processed" && result.rawEvent && result.canonicalEvent) {
     if (platformServices.storageOrchestratorService) {
@@ -25,6 +32,15 @@ ingestionRouter.post("/process", async (request, response) => {
         result.canonicalEvent
       );
       storageStatus = "persisted";
+
+      if (platformServices.rulesEngineService) {
+        const rulesResult = await platformServices.rulesEngineService.evaluateTelemetry(result.canonicalEvent);
+        ruleSummary = {
+          executedRules: rulesResult.executedRules,
+          matchedRules: rulesResult.matchedRules.length,
+          matchedRuleIds: rulesResult.matchedRules.map((trace) => trace.ruleId)
+        };
+      }
 
       if (platformServices.alertWorkflowService) {
         const workflowResult = await platformServices.alertWorkflowService.generateFromTelemetry(result.canonicalEvent);
@@ -48,6 +64,7 @@ ingestionRouter.post("/process", async (request, response) => {
     deadLetterEntryId: result.deadLetterEntryId,
     duplicateOfKey: result.duplicateOfKey,
     storageStatus,
+    ruleSummary,
     alertSummary
   };
 
