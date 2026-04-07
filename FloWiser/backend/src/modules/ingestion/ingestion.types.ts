@@ -1,4 +1,6 @@
+import type { CanonicalTelemetryEvent } from "@flowiser/schemas";
 import { z } from "zod";
+import type { RawEventArchiveRecord } from "../decoders/decoder.types.js";
 import { telemetryDecodeRequestSchema } from "../decoders/decoder.types.js";
 
 export const sourceAuthSchema = z.object({
@@ -53,4 +55,6 @@ export type IngestionProcessingResult = {
   canonicalEventId?: string;
   deadLetterEntryId?: string;
   duplicateOfKey?: string;
+  rawEvent?: RawEventArchiveRecord;
+  canonicalEvent?: CanonicalTelemetryEvent;
 };

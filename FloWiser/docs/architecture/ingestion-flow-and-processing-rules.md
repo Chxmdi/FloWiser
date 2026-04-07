@@ -1,6 +1,6 @@
 # Ingestion Flow and Processing Rules
 
-Epic 3 delivers the first reliability layer on top of the decoder framework.
+Epic 5 makes the earlier ingestion work durable.
 
 ## Current flow
 1. A trusted source sends an ingestion envelope
@@ -9,8 +9,10 @@ Epic 3 delivers the first reliability layer on top of the decoder framework.
 4. The raw payload is archived and decoded into the canonical contract
 5. Canonical idempotency is checked using device id, meter timestamp, and sequence number
 6. Ordering and replay checks run against the device's last known sequence and meter timestamp
-7. Unsupported or failed payloads are written to dead letter
-8. Operators can inspect archived raw events and dead-letter entries through API routes
+7. The processed raw event and canonical telemetry event are persisted when `DATABASE_URL` is configured
+8. Device, site, and branch state projections are updated
+9. Telemetry rollups are updated for 1-minute, 5-minute, hourly, and daily buckets
+10. Operators can inspect archived raw events and normalized telemetry through API routes
 
 ## Reliability checks included now
 - duplicate transport detection

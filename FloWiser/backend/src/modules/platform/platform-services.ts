@@ -11,6 +11,14 @@ import { DeadLetterService } from "../ingestion/dead-letter.service.js";
 import { IngestionConsumerService } from "../ingestion/consumer.service.js";
 import { InMemoryRegistryStore } from "../registry/in-memory-registry.store.js";
 import { RegistryService } from "../registry/registry.service.js";
+import { CurrentStateProjectionService } from "../storage/current-state-projection.service.js";
+import { getDatabasePool, isPersistenceEnabled } from "../storage/database.js";
+import { PostgresCurrentStateRepository } from "../storage/postgres-current-state.repository.js";
+import { PostgresNormalizedTelemetryRepository } from "../storage/postgres-normalized-telemetry.repository.js";
+import { PostgresRawEventStoreRepository } from "../storage/postgres-raw-event-store.repository.js";
+import { PostgresRollupRepository } from "../storage/postgres-rollup.repository.js";
+import { RollupProjectionService } from "../storage/rollup-projection.service.js";
+import { StorageOrchestratorService } from "../storage/storage-orchestrator.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -26,6 +34,19 @@ const ingestionConsumerService = new IngestionConsumerService(
 );
 const registryService = new RegistryService(new InMemoryRegistryStore());
 
+const storageOrchestratorService = isPersistenceEnabled()
+  ? (() => {
+      const pool = getDatabasePool();
+      const currentStateRepository = new PostgresCurrentStateRepository(pool);
+      return new StorageOrchestratorService(
+        new PostgresRawEventStoreRepository(pool),
+        new PostgresNormalizedTelemetryRepository(pool),
+        new CurrentStateProjectionService(currentStateRepository),
+        new RollupProjectionService(new PostgresRollupRepository(pool))
+      );
+    })()
+  : undefined;
+
 export const platformServices = {
   decoderRegistry,
   rawEventArchiveService,
@@ -34,5 +55,7 @@ export const platformServices = {
   orderingService,
   deadLetterService,
   ingestionConsumerService,
-  registryService
+  registryService,
+  storageOrchestratorService,
+  persistenceEnabled: isPersistenceEnabled()
 };

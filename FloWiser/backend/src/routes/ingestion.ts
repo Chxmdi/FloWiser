@@ -4,7 +4,7 @@ import { platformServices } from "../modules/platform/platform-services.js";
 
 export const ingestionRouter = Router();
 
-ingestionRouter.post("/process", (request, response) => {
+ingestionRouter.post("/process", async (request, response) => {
   const parsed = ingestionEnvelopeSchema.safeParse(request.body);
 
   if (!parsed.success) {
@@ -15,9 +15,34 @@ ingestionRouter.post("/process", (request, response) => {
   }
 
   const result = platformServices.ingestionConsumerService.process(parsed.data);
+  let storageStatus: "persisted" | "not_configured" | "skipped" = "skipped";
+
+  if (result.status === "processed" && result.rawEvent && result.canonicalEvent) {
+    if (platformServices.storageOrchestratorService) {
+      await platformServices.storageOrchestratorService.persistProcessedTelemetry(
+        result.rawEvent,
+        result.canonicalEvent
+      );
+      storageStatus = "persisted";
+    } else {
+      storageStatus = "not_configured";
+    }
+  }
+
+  const publicResult = {
+    traceId: result.traceId,
+    status: result.status,
+    findings: result.findings,
+    rawEventId: result.rawEventId,
+    canonicalEventId: result.canonicalEventId,
+    deadLetterEntryId: result.deadLetterEntryId,
+    duplicateOfKey: result.duplicateOfKey,
+    storageStatus
+  };
+
   const statusCode = result.status === "processed" ? 201 : result.status === "dead_letter" ? 422 : 200;
 
-  return response.status(statusCode).json(result);
+  return response.status(statusCode).json(publicResult);
 });
 
 ingestionRouter.get("/dead-letter", (_request, response) => {

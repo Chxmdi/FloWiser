@@ -6,7 +6,7 @@ This repository contains the platform foundations and early operational data mod
 
 - `FloWiser/packages/schemas` — shared canonical telemetry schemas
 - `FloWiser/frontend` — Next.js operator and executive web app scaffold
-- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, and registry model
+- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, and durable storage projections
 - `FloWiser/infrastructure` — AWS bootstrap and environment scaffolding
 - `FloWiser/docs` — engineering, architecture, and scope documentation
 - `.github/workflows` — CI, preview/staging, migrations, and release workflows
@@ -40,6 +40,12 @@ This repository contains the platform foundations and early operational data mod
 - bind, remap, and unbind lifecycle for device-to-asset mappings
 - hierarchy import endpoint for onboarding flows
 - persistent schema migration for the registry core tables
+
+### Epic 5
+- persistent raw-event archive and normalized telemetry event store
+- current-state projections for device, site, and branch views
+- rollup tables and projection service for 1-minute, 5-minute, hourly, and daily telemetry buckets
+- query routes for persisted raw events and normalized telemetry events
 
 ## Quick start
 

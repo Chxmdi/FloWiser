@@ -6,8 +6,10 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /` — foundation alive message
 - `GET /health` — health payload for CI and platform checks
 - `GET /telemetry/decoders` — list supported decoder adapters
+- `GET /telemetry/events` — query persisted normalized telemetry events by event id, device id, and time range
 - `POST /telemetry/decode-preview` — validate and normalize a raw telemetry payload
 - `GET /raw-events/:rawEventId` — inspect an archived raw payload and parse outcome
+- `GET /raw-events` — query persisted raw events by device id and time range
 - `POST /ingestion/process` — process a transport envelope through source validation, dedupe, decoding, and ordering checks
 - `GET /ingestion/dead-letter` — list dead-letter entries produced by ingestion
 - `GET /ingestion/dead-letter/:entryId` — inspect a specific dead-letter entry
@@ -35,3 +37,4 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - raw payload inspection available for decoder debugging
 - ingestion responses always return a trace id for operator triage
 - registry writes must validate tenant, branch, and site ownership before data is accepted
+- persistent query routes return `501` until `DATABASE_URL` is configured

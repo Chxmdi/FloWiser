@@ -66,7 +66,9 @@ export class IngestionConsumerService {
           findings: [],
           rawEventId: decodeResult.rawEvent.rawEventId,
           canonicalEventId: decodeResult.canonicalEvent.eventId,
-          duplicateOfKey: canonicalKey
+          duplicateOfKey: canonicalKey,
+          rawEvent: decodeResult.rawEvent,
+          canonicalEvent: decodeResult.canonicalEvent
         };
       }
 
@@ -77,7 +79,9 @@ export class IngestionConsumerService {
         status: "processed",
         findings,
         rawEventId: decodeResult.rawEvent.rawEventId,
-        canonicalEventId: decodeResult.canonicalEvent.eventId
+        canonicalEventId: decodeResult.canonicalEvent.eventId,
+        rawEvent: decodeResult.rawEvent,
+        canonicalEvent: decodeResult.canonicalEvent
       };
     } catch (error) {
       if (error instanceof DecodePreviewError) {

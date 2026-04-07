@@ -3,12 +3,35 @@ import { telemetryDecodeRequestSchema } from "../modules/decoders/decoder.types.
 import { DecodePreviewError } from "../modules/decoders/errors.js";
 import { platformServices } from "../modules/platform/platform-services.js";
 
+const parseLimit = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100;
+};
+
 export const telemetryRouter = Router();
 
 telemetryRouter.get("/decoders", (_request, response) => {
   response.status(200).json({
     supportedDecoders: platformServices.decoderRegistry.listSupportedDecoders()
   });
+});
+
+telemetryRouter.get("/events", async (request, response) => {
+  if (!platformServices.storageOrchestratorService) {
+    return response.status(501).json({
+      error: "Persistent telemetry event queries are unavailable until DATABASE_URL is configured."
+    });
+  }
+
+  const events = await platformServices.storageOrchestratorService.findTelemetryEvents({
+    eventId: request.query.eventId as string | undefined,
+    deviceId: request.query.deviceId as string | undefined,
+    from: request.query.from as string | undefined,
+    to: request.query.to as string | undefined,
+    limit: parseLimit(request.query.limit)
+  });
+
+  return response.status(200).json({ events });
 });
 
 telemetryRouter.post("/decode-preview", (request, response) => {
