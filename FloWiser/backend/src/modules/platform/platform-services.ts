@@ -9,6 +9,8 @@ import { OrderingService } from "../ingestion/ordering.service.js";
 import { InMemoryDeadLetterRepository } from "../ingestion/in-memory-dead-letter.repository.js";
 import { DeadLetterService } from "../ingestion/dead-letter.service.js";
 import { IngestionConsumerService } from "../ingestion/consumer.service.js";
+import { InMemoryRegistryStore } from "../registry/in-memory-registry.store.js";
+import { RegistryService } from "../registry/registry.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -22,6 +24,7 @@ const ingestionConsumerService = new IngestionConsumerService(
   orderingService,
   deadLetterService
 );
+const registryService = new RegistryService(new InMemoryRegistryStore());
 
 export const platformServices = {
   decoderRegistry,
@@ -30,5 +33,6 @@ export const platformServices = {
   idempotencyService,
   orderingService,
   deadLetterService,
-  ingestionConsumerService
+  ingestionConsumerService,
+  registryService
 };

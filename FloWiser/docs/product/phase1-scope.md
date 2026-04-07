@@ -11,9 +11,12 @@ Deliver the smallest credible FloWiser product foundation that can ingest, store
 - infrastructure bootstrap templates
 - engineering standards
 - CI/CD, migrations, and release hooks
+- canonical telemetry event contract
+- decoder registry and raw payload archive
+- ingestion reliability safeguards
+- tenant / branch / site / asset / device registry with binding workflows
 
 ## Explicitly not included
-- full ingestion logic
 - rules engine
 - optimization engine
 - live customer auth integration
