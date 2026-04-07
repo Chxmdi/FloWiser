@@ -1,16 +1,16 @@
 # Ingestion Flow and Processing Rules
 
-## Phase 1 intent
-We are not fully implementing ingestion in Epic 1. We are preparing the repo so ingestion can be added without restructuring the platform later.
+Epic 2 delivers the telemetry contract layer that sits between raw device payloads and later platform logic.
 
-## Target flow
-1. Meter or gateway publishes telemetry
-2. Ingestion service receives payload
-3. Decoder normalizes payload
-4. Event is validated and enriched with site context
-5. Raw payload is archived
-6. Normalized telemetry is persisted
-7. State and metric engines consume the normalized stream
+## Current flow
+1. Operator or test harness sends a decode-preview request
+2. Raw payload is archived immediately
+3. Decoder registry resolves the best adapter
+4. Adapter validates the vendor-specific payload
+5. Adapter normalizes metrics, timestamps, and status fields
+6. Canonical event is validated against the shared schema package
+7. Archive record is marked as success or failure
+8. Raw event can be fetched again for replay and debugging
 
 ## Design rule
-Never let raw meter payload shapes leak directly into application code. All downstream systems should depend on a canonical event contract.
+Never let raw meter payload shapes leak directly into application code. All downstream systems should depend on the shared canonical event contract.

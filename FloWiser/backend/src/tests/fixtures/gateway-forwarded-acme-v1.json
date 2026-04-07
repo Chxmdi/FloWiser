@@ -1,0 +1,39 @@
+{
+  "gatewayEnvelopeVersion": "1",
+  "gateway": {
+    "vendor": "Teltonika",
+    "model": "TRB245",
+    "firmware": "01.14.2"
+  },
+  "publishedAt": "2026-04-07T12:00:00Z",
+  "targetDecoder": {
+    "vendor": "AcmePower",
+    "model": "MTR-3P",
+    "version": "1.0.0"
+  },
+  "payload": {
+    "vendor": "AcmePower",
+    "model": "MTR-3P",
+    "firmware": "1.4.2",
+    "timestamp": "2026-04-07T11:59:30Z",
+    "seq": 10493,
+    "measurements": {
+      "activePowerKw": 39.2,
+      "totalEnergyKwh": 120395.4,
+      "voltageL1": 228.6,
+      "voltageL2": 228.2,
+      "voltageL3": 229.4,
+      "currentL1": 57.2,
+      "currentL2": 56.8,
+      "currentL3": 58.1,
+      "frequencyHz": 50.0,
+      "powerFactor": 0.92
+    },
+    "status": {
+      "online": true,
+      "tamper": false,
+      "gridAvailable": false,
+      "generatorRunning": true
+    }
+  }
+}
