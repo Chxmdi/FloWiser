@@ -16,7 +16,7 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-audit --no-fund
 
       - name: Validate workspace
         run: |
@@ -26,7 +26,15 @@ jobs:
 
       - name: Package preview artifacts
         run: |
-          tar -czf flowiser-preview.tar.gz FloWiser/frontend FloWiser/backend
+          tar -czf flowiser-preview.tar.gz \
+            package.json \
+            .nvmrc \
+            .npmrc \
+            tsconfig.base.json \
+            eslint.config.mjs \
+            FloWiser/packages/schemas \
+            FloWiser/frontend \
+            FloWiser/backend
 
       - name: Upload preview bundle
         uses: actions/upload-artifact@v4

@@ -12,6 +12,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "migrations:run": "node scripts/run-migrations.mjs"
   },
+  "engines": {
+    "node": ">=20 <21",
+    "npm": ">=10 <11"
+  },
   "dependencies": {
     "@flowiser/schemas": "0.1.0",
     "dotenv": "^16.4.7",

@@ -17,6 +17,10 @@
     "dev:frontend": "npm run dev --workspace @flowiser/frontend",
     "migrations:run": "npm run migrations:run --workspace @flowiser/backend"
   },
+  "engines": {
+    "node": ">=20 <21",
+    "npm": ">=10 <11"
+  },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
     "concurrently": "^9.1.2",

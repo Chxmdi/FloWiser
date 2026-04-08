@@ -27,17 +27,20 @@ rawEventsRouter.get("/", async (request, response) => {
 });
 
 rawEventsRouter.get("/:rawEventId", async (request, response) => {
+  if (platformServices.storageOrchestratorService) {
+    const persistedRecord = await platformServices.storageOrchestratorService.findRawEventById(
+      request.params.rawEventId
+    );
+
+    if (persistedRecord) {
+      return response.status(200).json(persistedRecord);
+    }
+  }
+
   try {
     const record = platformServices.rawEventArchiveService.getById(request.params.rawEventId);
     return response.status(200).json(record);
   } catch {
-    if (platformServices.storageOrchestratorService) {
-      const record = await platformServices.storageOrchestratorService.findRawEventById(request.params.rawEventId);
-      if (record) {
-        return response.status(200).json(record);
-      }
-    }
-
     return response.status(404).json({
       error: `Raw event ${request.params.rawEventId} was not found`
     });
