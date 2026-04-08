@@ -8,7 +8,8 @@ const navItems = [
   { href: "/executive", label: "Executive" },
   { href: "/admin/devices", label: "Admin" },
   { href: "/admin/rules", label: "Rules" },
-  { href: "/admin/recommendations", label: "Recommendations" }
+  { href: "/admin/recommendations", label: "Recommendations" },
+  { href: "/admin/controls", label: "Controls" }
 ];
 
 export const AppShell = ({ children }: PropsWithChildren) => {

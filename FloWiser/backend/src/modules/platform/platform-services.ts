@@ -32,6 +32,9 @@ import { PostgresRecommendationRepository } from "../recommendations/postgres-re
 import { RecommendationEngineService } from "../recommendations/recommendation-engine.service.js";
 import { RootCauseService } from "../recommendations/root-cause.service.js";
 import { PostgresExperienceRepository } from "../experience/postgres-experience.repository.js";
+import { PostgresControlsRepository } from "../controls/postgres-controls.repository.js";
+import { ExecutionGuardrailService } from "../controls/execution-guardrail.service.js";
+import { ActionExecutionService } from "../controls/action-execution.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -83,6 +86,12 @@ const recommendationEngineService = recommendationRepository
   ? new RecommendationEngineService(recommendationRepository, new RootCauseService())
   : undefined;
 const experienceRepository = pool ? new PostgresExperienceRepository(pool) : undefined;
+const controlsRepository = pool ? new PostgresControlsRepository(pool) : undefined;
+const executionGuardrailService = controlsRepository ? new ExecutionGuardrailService(controlsRepository) : undefined;
+const actionExecutionService =
+  controlsRepository && recommendationEngineService && executionGuardrailService
+    ? new ActionExecutionService(controlsRepository, recommendationEngineService, executionGuardrailService)
+    : undefined;
 
 export const platformServices = {
   decoderRegistry,
@@ -101,5 +110,6 @@ export const platformServices = {
   rulesEngineService,
   recommendationEngineService,
   experienceRepository,
+  actionExecutionService,
   persistenceEnabled
 };

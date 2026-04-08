@@ -48,6 +48,14 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /dashboard/branches/:branchId` — branch detail experience payload
 - `GET /dashboard/sites/:siteId` — site cockpit experience payload
 - `GET /dashboard/executive` — executive portfolio summary and opportunities
+- `GET /controls/policies` — list control approval policies
+- `GET /controls/policies/:policyId` — inspect one control policy
+- `PATCH /controls/policies/:policyId` — retune execution guardrails
+- `GET /controls/executions` — list execution requests
+- `GET /controls/executions/:executionId` — inspect one execution request and its approvals
+- `POST /controls/executions` — create a dry-run or execution request for a recommendation
+- `POST /controls/executions/:executionId/approvals` — add an execution-specific approval
+- `POST /controls/executions/:executionId/complete` — mark a ready execution as executed or failed
 
 ## API principles
 - resource-oriented routes
@@ -57,4 +65,4 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - raw payload inspection available for decoder debugging
 - ingestion responses always return a trace id for operator triage
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, recommendation, and dashboard routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, dashboard, and control routes return `501` until `DATABASE_URL` is configured

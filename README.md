@@ -6,14 +6,14 @@ This repository contains the platform foundations and early operational data mod
 
 - `FloWiser/packages/schemas` — shared canonical telemetry schemas
 - `FloWiser/frontend` — Next.js operator, executive, and admin web app scaffold
-- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, durable storage projections, trust/state engine, workflow core, rules engine, recommendation engine, and experience APIs
+- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, durable storage projections, trust/state engine, workflow core, rules engine, recommendation engine, experience APIs, and guarded controls execution layer
 - `FloWiser/infrastructure` — AWS bootstrap and environment scaffolding
 - `FloWiser/docs` — engineering, architecture, and scope documentation
 - `.github/workflows` — CI, preview/staging, migrations, and release workflows
 
 ## Current delivery status
 
-This repo contains the first ten foundation epics of the delivery plan.
+This repo contains the first eleven foundation epics of the delivery plan.
 
 ### Epic 1
 - monorepo workspace and engineering standards
@@ -74,6 +74,13 @@ This repo contains the first ten foundation epics of the delivery plan.
 - dashboard and experience APIs for operator and executive views
 - branch and site detail endpoints built from live backend state
 - frontend overview, branch, site, alert, and executive pages tied to backend data with safe fallbacks
+
+### Epic 11
+- control approval policies
+- execution-specific approvals and action execution requests
+- guardrail evaluation before action completion
+- execution logs and control-management routes
+- admin controls inspection UI
 
 ## Quick start
 
