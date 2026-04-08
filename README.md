@@ -6,14 +6,14 @@ This repository contains the platform foundations and early operational data mod
 
 - `FloWiser/packages/schemas` — shared canonical telemetry schemas
 - `FloWiser/frontend` — Next.js operator and executive web app scaffold
-- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, durable storage projections, trust/state engine, workflow core, and rules engine
+- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, durable storage projections, trust/state engine, workflow core, rules engine, and optimization recommendations layer
 - `FloWiser/infrastructure` — AWS bootstrap and environment scaffolding
 - `FloWiser/docs` — engineering, architecture, and scope documentation
 - `.github/workflows` — CI, preview/staging, migrations, and release workflows
 
 ## Current delivery status
 
-This repo contains the first eight foundation epics of the delivery plan.
+This repo contains the first nine foundation epics of the delivery plan.
 
 ### Epic 1
 - monorepo workspace and engineering standards
@@ -63,6 +63,12 @@ This repo contains the first eight foundation epics of the delivery plan.
 - initial waste, generator, telemetry, and equipment rules
 - rule-management backend routes
 - minimal admin rule-management UI
+
+### Epic 9
+- root-cause classification from matched rule traces
+- persisted recommendations and approval workflows
+- top-action ranking and recommendation query routes
+- admin recommendation inspection UI
 
 ## Quick start
 

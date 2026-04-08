@@ -24,6 +24,12 @@ ingestionRouter.post("/process", async (request, response) => {
         matchedRuleIds: string[];
       }
     | undefined;
+  let recommendationSummary:
+    | {
+        generated: number;
+        topActionIds: string[];
+      }
+    | undefined;
 
   if (result.status === "processed" && result.rawEvent && result.canonicalEvent) {
     if (platformServices.storageOrchestratorService) {
@@ -33,12 +39,26 @@ ingestionRouter.post("/process", async (request, response) => {
       );
       storageStatus = "persisted";
 
+      let matchedRules: Awaited<ReturnType<NonNullable<typeof platformServices.rulesEngineService>["evaluateTelemetry"]>>["matchedRules"] = [];
+
       if (platformServices.rulesEngineService) {
         const rulesResult = await platformServices.rulesEngineService.evaluateTelemetry(result.canonicalEvent);
+        matchedRules = rulesResult.matchedRules;
         ruleSummary = {
           executedRules: rulesResult.executedRules,
           matchedRules: rulesResult.matchedRules.length,
           matchedRuleIds: rulesResult.matchedRules.map((trace) => trace.ruleId)
+        };
+      }
+
+      if (platformServices.recommendationEngineService && matchedRules.length > 0) {
+        const recommendations = await platformServices.recommendationEngineService.generateFromRuleTraces(
+          result.canonicalEvent,
+          matchedRules
+        );
+        recommendationSummary = {
+          generated: recommendations.length,
+          topActionIds: recommendations.slice(0, 3).map((recommendation) => recommendation.actionId)
         };
       }
 
@@ -65,6 +85,7 @@ ingestionRouter.post("/process", async (request, response) => {
     duplicateOfKey: result.duplicateOfKey,
     storageStatus,
     ruleSummary,
+    recommendationSummary,
     alertSummary
   };
 
