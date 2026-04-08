@@ -66,6 +66,12 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `POST /access/memberships` — create a tenant membership
 - `PATCH /access/memberships/:membershipId` — update a tenant membership
 - `GET /access/audit-logs` — inspect protected-route audit logs
+- `GET /reporting/overview` — verification and realized-value summary
+- `GET /reporting/executive` — portfolio capture-rate and branch realization report
+- `GET /reporting/sites/:siteId` — site-level realized-vs-expected reporting
+- `GET /reporting/verifications` — list verification snapshots
+- `GET /reporting/recommendations/:actionId` — inspect per-action verification history
+- `POST /reporting/recommendations/:actionId/verify` — create a new verification snapshot from current execution evidence
 
 ## API principles
 - resource-oriented routes
@@ -74,6 +80,7 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - protected routes require `x-tenant-id` and `x-user-id` headers
 - role and scope checks are enforced before protected routers execute
 - audit logs are captured for protected-route activity
+- reporting currently uses execution-evidence-derived verification snapshots, not full field M&V
 - raw payload inspection remains available for operator workflows
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, recommendation, dashboard, control, command, and access routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, dashboard, control, command, access, and reporting routes return `501` until `DATABASE_URL` is configured

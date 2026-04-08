@@ -11,7 +11,8 @@ const navItems = [
   { href: "/admin/recommendations", label: "Recommendations" },
   { href: "/admin/controls", label: "Controls" },
   { href: "/admin/commands", label: "Commands" },
-  { href: "/admin/access", label: "Access" }
+  { href: "/admin/access", label: "Access" },
+  { href: "/admin/reporting", label: "Reporting" }
 ];
 
 export const AppShell = ({ children }: PropsWithChildren) => {

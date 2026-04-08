@@ -41,6 +41,8 @@ import { DeviceCommandingService } from "../commands/device-commanding.service.j
 import { PostgresAccessRepository } from "../access/postgres-access.repository.js";
 import { AccessAuthorizationService } from "../access/access-authorization.service.js";
 import { AccessAuditService } from "../access/access-audit.service.js";
+import { PostgresReportingRepository } from "../reporting/postgres-reporting.repository.js";
+import { ReportingService } from "../reporting/reporting.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -111,6 +113,8 @@ const deviceCommandingService =
 const accessRepository = pool ? new PostgresAccessRepository(pool) : undefined;
 const accessAuthorizationService = accessRepository ? new AccessAuthorizationService(accessRepository) : undefined;
 const accessAuditService = accessRepository ? new AccessAuditService(accessRepository) : undefined;
+const reportingRepository = pool ? new PostgresReportingRepository(pool) : undefined;
+const reportingService = reportingRepository ? new ReportingService(reportingRepository) : undefined;
 
 export const platformServices = {
   decoderRegistry,
@@ -133,5 +137,6 @@ export const platformServices = {
   deviceCommandingService,
   accessAuthorizationService,
   accessAuditService,
+  reportingService,
   persistenceEnabled
 };
