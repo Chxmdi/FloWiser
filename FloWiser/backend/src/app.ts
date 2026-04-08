@@ -16,6 +16,8 @@ import { controlsRouter } from "./routes/controls.js";
 import { commandsRouter } from "./routes/commands.js";
 import { accessRouter } from "./routes/access.js";
 import { reportingRouter } from "./routes/reporting.js";
+import { gatewayRouter } from "./routes/gateway.js";
+import { fieldVerificationRouter } from "./routes/field-verification.js";
 import { createAuditLoggingMiddleware, createProtectedRouteMiddleware } from "./modules/access/access.middleware.js";
 import { platformServices } from "./modules/platform/platform-services.js";
 
@@ -62,6 +64,8 @@ export const createApp = () => {
   app.use("/dashboard", viewerAccess, audit, dashboardRouter);
   app.use("/controls", operatorAccess, audit, controlsRouter);
   app.use("/commands", operatorAccess, audit, commandsRouter);
+  app.use("/gateway", gatewayRouter);
+  app.use("/field-verification", operatorAccess, audit, fieldVerificationRouter);
   app.use("/access", viewerAccess, audit, accessRouter);
   app.use("/reporting", viewerAccess, audit, reportingRouter);
 

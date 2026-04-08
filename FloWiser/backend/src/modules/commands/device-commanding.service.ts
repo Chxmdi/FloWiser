@@ -121,6 +121,37 @@ export class DeviceCommandingService {
     const commandPlan = this.buildPlan(context.template, context.recommendation);
     const simulation = this.simulator.simulate(context.template, commandPlan, context.recommendation);
     const timestamp = new Date().toISOString();
+
+    if (context.template.dispatchChannel === "simulated_gateway") {
+      const dispatch = await this.repository.createDispatch({
+        executionId: context.execution.executionId,
+        actionId: context.recommendation.actionId,
+        templateId: context.template.templateId,
+        tenantId: context.recommendation.tenantId,
+        branchId: context.recommendation.branchId,
+        siteId: context.recommendation.siteId,
+        deviceId: context.recommendation.deviceId,
+        dispatchChannel: context.template.dispatchChannel,
+        executionMode: context.execution.executionMode,
+        dispatchStatus: "sent",
+        requestedBy: input.actor,
+        note: input.note,
+        commandPayload: commandPlan,
+        simulationResult: simulation,
+        resultSummary: "Queued for gateway agent pickup",
+        requestedAt: timestamp,
+        dispatchedAt: timestamp
+      });
+
+      return {
+        ...context,
+        commandPlan,
+        simulation,
+        dispatch,
+        executionResult: { execution: context.execution, approvals: context.approvals }
+      };
+    }
+
     const dispatch = await this.repository.createDispatch({
       executionId: context.execution.executionId,
       actionId: context.recommendation.actionId,
@@ -142,20 +173,13 @@ export class DeviceCommandingService {
       completedAt: timestamp
     });
 
-    let executionResult:
-      | Awaited<ReturnType<ActionExecutionService["completeExecution"]>>
-      | { execution: typeof context.execution; approvals: typeof context.approvals }
-      | undefined;
-
-    if (context.template.dispatchChannel === "manual_playbook") {
-      executionResult = { execution: context.execution, approvals: context.approvals };
-    } else {
-      executionResult = await this.actionExecutionService.completeExecution(executionId, {
-        actor: input.actor,
-        success: simulation.success,
-        resultSummary: simulation.summary
-      });
-    }
+    const executionResult = context.template.dispatchChannel === "manual_playbook"
+      ? { execution: context.execution, approvals: context.approvals }
+      : await this.actionExecutionService.completeExecution(executionId, {
+          actor: input.actor,
+          success: simulation.success,
+          resultSummary: simulation.summary
+        });
 
     return {
       ...context,

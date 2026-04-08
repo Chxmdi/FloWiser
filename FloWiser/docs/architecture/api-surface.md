@@ -60,7 +60,15 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /commands/dispatches/:dispatchId` — inspect one command dispatch
 - `POST /commands/executions/:executionId/plan` — create a command plan for an execution request
 - `POST /commands/executions/:executionId/simulate` — simulate a dispatch without closing the execution
-- `POST /commands/executions/:executionId/dispatch` — simulate a live dispatch path and log the outcome
+- `POST /commands/executions/:executionId/dispatch` — queue or dispatch a command path depending on channel
+- `GET /gateway/agents` — list configured gateway agents
+- `GET /gateway/dispatches/:dispatchId/receipts` — inspect gateway receipt history for one dispatch
+- `POST /gateway/agents/:agentId/heartbeat` — gateway agent heartbeat using `x-gateway-key`
+- `POST /gateway/agents/:agentId/pull-dispatches` — gateway agent pulls queued dispatches for its site
+- `POST /gateway/agents/:agentId/dispatches/:dispatchId/result` — gateway agent submits dispatch results
+- `GET /field-verification/measurements` — list captured field verification measurements
+- `GET /field-verification/recommendations/:actionId` — inspect per-action field measurements
+- `POST /field-verification/recommendations/:actionId/measure` — capture measured before/after values
 - `GET /access/me` — inspect the resolved actor context from request headers
 - `GET /access/memberships` — list tenant memberships
 - `POST /access/memberships` — create a tenant membership
@@ -71,7 +79,7 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /reporting/sites/:siteId` — site-level realized-vs-expected reporting
 - `GET /reporting/verifications` — list verification snapshots
 - `GET /reporting/recommendations/:actionId` — inspect per-action verification history
-- `POST /reporting/recommendations/:actionId/verify` — create a new verification snapshot from current execution evidence
+- `POST /reporting/recommendations/:actionId/verify` — create a new verification snapshot from current execution evidence and field inputs
 
 ## API principles
 - resource-oriented routes
@@ -80,7 +88,8 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - protected routes require `x-tenant-id` and `x-user-id` headers
 - role and scope checks are enforced before protected routers execute
 - audit logs are captured for protected-route activity
-- reporting currently uses execution-evidence-derived verification snapshots, not full field M&V
+- gateway agent routes use `x-gateway-key` instead of actor headers
+- reporting prefers measured field verification data when it exists, and falls back to execution evidence otherwise
 - raw payload inspection remains available for operator workflows
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, recommendation, dashboard, control, command, access, and reporting routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, dashboard, control, command, access, reporting, gateway, and field verification routes return `501` until `DATABASE_URL` is configured

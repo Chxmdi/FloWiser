@@ -122,7 +122,7 @@ test("creates a command plan and planned dispatch", async () => {
   assert.ok(result?.commandPlan.commands.length);
 });
 
-test("dispatches a ready execution and marks it executed for simulated gateway commands", async () => {
+test("queues a ready simulated gateway execution for agent pickup", async () => {
   const actionExecutionService = new FakeActionExecutionService();
   const service = new DeviceCommandingService(
     new FakeCommandingRepository() as any,
@@ -133,6 +133,6 @@ test("dispatches a ready execution and marks it executed for simulated gateway c
 
   const result = await service.dispatchExecution("exec-1", { actor: "ops-manager" });
 
-  assert.equal(result?.dispatch.dispatchStatus, "succeeded");
-  assert.equal(actionExecutionService.execution.status, "executed");
+  assert.equal(result?.dispatch.dispatchStatus, "sent");
+  assert.equal(actionExecutionService.execution.status, "ready");
 });

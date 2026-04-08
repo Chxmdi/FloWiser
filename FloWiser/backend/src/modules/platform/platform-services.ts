@@ -43,6 +43,10 @@ import { AccessAuthorizationService } from "../access/access-authorization.servi
 import { AccessAuditService } from "../access/access-audit.service.js";
 import { PostgresReportingRepository } from "../reporting/postgres-reporting.repository.js";
 import { ReportingService } from "../reporting/reporting.service.js";
+import { PostgresGatewayRepository } from "../gateway/postgres-gateway.repository.js";
+import { GatewayIntegrationService } from "../gateway/gateway-integration.service.js";
+import { PostgresFieldVerificationRepository } from "../field-verification/postgres-field-verification.repository.js";
+import { FieldVerificationService } from "../field-verification/field-verification.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -113,8 +117,19 @@ const deviceCommandingService =
 const accessRepository = pool ? new PostgresAccessRepository(pool) : undefined;
 const accessAuthorizationService = accessRepository ? new AccessAuthorizationService(accessRepository) : undefined;
 const accessAuditService = accessRepository ? new AccessAuditService(accessRepository) : undefined;
+const fieldVerificationRepository = pool ? new PostgresFieldVerificationRepository(pool) : undefined;
+const fieldVerificationService =
+  fieldVerificationRepository && recommendationEngineService
+    ? new FieldVerificationService(fieldVerificationRepository, recommendationEngineService)
+    : undefined;
 const reportingRepository = pool ? new PostgresReportingRepository(pool) : undefined;
-const reportingService = reportingRepository ? new ReportingService(reportingRepository) : undefined;
+const reportingService = reportingRepository
+  ? new ReportingService(reportingRepository, fieldVerificationService)
+  : undefined;
+const gatewayRepository = pool ? new PostgresGatewayRepository(pool) : undefined;
+const gatewayIntegrationService = gatewayRepository && actionExecutionService
+  ? new GatewayIntegrationService(gatewayRepository, actionExecutionService)
+  : undefined;
 
 export const platformServices = {
   decoderRegistry,
@@ -137,6 +152,8 @@ export const platformServices = {
   deviceCommandingService,
   accessAuthorizationService,
   accessAuditService,
+  fieldVerificationService,
   reportingService,
+  gatewayIntegrationService,
   persistenceEnabled
 };

@@ -54,8 +54,15 @@ class FakeReportingRepository {
   async getSiteReport(siteId: string) { return { siteId, summary: { verifiedActionCount: this.created.length } }; }
 }
 
+class FakeFieldVerificationService {
+  measurement: any = undefined;
+  async getLatestMeasurement() {
+    return this.measurement;
+  }
+}
+
 test("creates realized verification snapshot for successful executed dispatch", async () => {
-  const service = new ReportingService(new FakeReportingRepository() as any);
+  const service = new ReportingService(new FakeReportingRepository() as any, new FakeFieldVerificationService() as any);
   const result = await service.verifyRecommendation("11111111-1111-4111-8111-111111111111", {
     actor: "ops-manager",
     note: "Verified after simulated dispatch"
@@ -66,15 +73,29 @@ test("creates realized verification snapshot for successful executed dispatch", 
   assert.ok((result?.snapshot.roiScore ?? 0) > 0);
 });
 
-test("keeps recommendation unverified when no execution exists", async () => {
-  const repository = new FakeReportingRepository();
-  repository.context = { ...repository.context, executionId: undefined, executionStatus: undefined, dispatchId: undefined, dispatchStatus: undefined };
-  const service = new ReportingService(repository as any);
+test("uses field measurement when available", async () => {
+  const fieldService = new FakeFieldVerificationService();
+  fieldService.measurement = {
+    measurementId: "measurement-1",
+    actionId: "11111111-1111-4111-8111-111111111111",
+    measurementBasis: "manual_meter_read",
+    baselineKwhPerDay: 100,
+    observedKwhPerDay: 60,
+    baselineDieselLitersPerDay: 20,
+    observedDieselLitersPerDay: 10,
+    energyTariff: 200,
+    dieselCostPerLiter: 900,
+    measuredBy: "ops-manager",
+    measuredAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
 
+  const service = new ReportingService(new FakeReportingRepository() as any, fieldService as any);
   const result = await service.verifyRecommendation("11111111-1111-4111-8111-111111111111", {
     actor: "ops-manager"
   });
 
-  assert.equal(result?.snapshot.verificationStatus, "unverified");
-  assert.equal(result?.snapshot.realizedMonthlySavings, 0);
+  assert.equal(result?.snapshot.verificationBasis, "field_measurement_manual_meter_read");
+  assert.ok((result?.snapshot.realizedMonthlySavings ?? 0) > 0);
 });

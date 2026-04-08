@@ -1,5 +1,6 @@
 import { PostgresReportingRepository } from "./postgres-reporting.repository.js";
 import type { VerificationRequestInput, VerificationSnapshotRecord } from "./reporting.types.js";
+import type { FieldVerificationService } from "../field-verification/field-verification.service.js";
 
 const safeDivide = (numerator: number, denominator: number) => (denominator > 0 ? numerator / denominator : 0);
 
@@ -42,6 +43,8 @@ const getDispatchFactor = (dispatchStatus?: string) => {
       return 0.55;
     case "planned":
       return 0.25;
+    case "sent":
+      return 0.45;
     case "failed":
     case "blocked":
       return 0;
@@ -53,7 +56,10 @@ const getDispatchFactor = (dispatchStatus?: string) => {
 const ageHours = (timestamp: string) => Math.max(0, (Date.now() - Date.parse(timestamp)) / (1000 * 60 * 60));
 
 export class ReportingService {
-  constructor(private readonly repository: PostgresReportingRepository) {}
+  constructor(
+    private readonly repository: PostgresReportingRepository,
+    private readonly fieldVerificationService?: FieldVerificationService
+  ) {}
 
   async verifyRecommendation(actionId: string, input: VerificationRequestInput) {
     const context = await this.repository.getRecommendationVerificationContext(actionId);
@@ -61,11 +67,34 @@ export class ReportingService {
       return undefined;
     }
 
+    const latestMeasurement = await this.fieldVerificationService?.getLatestMeasurement(actionId);
+
     let verificationStatus: VerificationSnapshotRecord["verificationStatus"] = "unverified";
     let verificationBasis = "no_execution";
     let realizationRate = 0;
+    let realizedMonthlySavings = 0;
+    let realizedDieselSavings = 0;
+    let implementationCostProxy = Math.max(50000, context.effortScore * 15000);
 
-    if (!context.executionId) {
+    if (latestMeasurement) {
+      const energyDelta = Math.max(0, latestMeasurement.baselineKwhPerDay - latestMeasurement.observedKwhPerDay);
+      const dieselDelta = Math.max(0, latestMeasurement.baselineDieselLitersPerDay - latestMeasurement.observedDieselLitersPerDay);
+      realizedMonthlySavings = Number((energyDelta * 30 * latestMeasurement.energyTariff).toFixed(2));
+      realizedDieselSavings = Number((dieselDelta * 30 * latestMeasurement.dieselCostPerLiter).toFixed(2));
+      realizationRate = Number(
+        Math.min(1, safeDivide(realizedMonthlySavings, Math.max(context.expectedMonthlySavings, 1))).toFixed(4)
+      );
+      verificationBasis = `field_measurement_${latestMeasurement.measurementBasis}`;
+      implementationCostProxy = Math.max(implementationCostProxy, Number((context.effortScore * 12000).toFixed(2)));
+
+      if (realizationRate >= 0.65 || realizedDieselSavings >= context.expectedDieselSavings * 0.65) {
+        verificationStatus = "realized";
+      } else if (realizationRate > 0 || realizedDieselSavings > 0) {
+        verificationStatus = "partially_realized";
+      } else {
+        verificationStatus = "not_realized";
+      }
+    } else if (!context.executionId) {
       verificationStatus = "unverified";
       verificationBasis = "no_execution";
     } else if (context.executionStatus === "failed" || context.dispatchStatus === "failed" || context.dispatchStatus === "blocked") {
@@ -93,21 +122,20 @@ export class ReportingService {
       } else {
         verificationBasis = `execution_${context.executionStatus ?? "unknown"}`;
       }
-    }
 
-    if (context.recommendationStatus === "resolved" && realizationRate > 0 && verificationStatus === "partially_realized") {
-      realizationRate = Number(Math.min(1, realizationRate + 0.1).toFixed(4));
-      if (realizationRate >= 0.65) {
-        verificationStatus = "realized";
+      if (context.recommendationStatus === "resolved" && realizationRate > 0 && verificationStatus === "partially_realized") {
+        realizationRate = Number(Math.min(1, realizationRate + 0.1).toFixed(4));
+        if (realizationRate >= 0.65) {
+          verificationStatus = "realized";
+        }
       }
+
+      const agingPenalty = Math.max(0.75, 1 - ageHours(context.lastSeenAt) / 1000);
+      realizationRate = Number((realizationRate * agingPenalty).toFixed(4));
+      realizedMonthlySavings = Number((context.expectedMonthlySavings * realizationRate).toFixed(2));
+      realizedDieselSavings = Number((context.expectedDieselSavings * realizationRate).toFixed(2));
     }
 
-    const agingPenalty = Math.max(0.75, 1 - ageHours(context.lastSeenAt) / 1000);
-    realizationRate = Number((realizationRate * agingPenalty).toFixed(4));
-
-    const realizedMonthlySavings = Number((context.expectedMonthlySavings * realizationRate).toFixed(2));
-    const realizedDieselSavings = Number((context.expectedDieselSavings * realizationRate).toFixed(2));
-    const implementationCostProxy = Math.max(50000, context.effortScore * 15000);
     const roiScore = Number((safeDivide(realizedMonthlySavings, implementationCostProxy) * 100).toFixed(2));
     const paybackMonths = realizedMonthlySavings > 0
       ? Number((implementationCostProxy / realizedMonthlySavings).toFixed(2))
@@ -138,6 +166,7 @@ export class ReportingService {
 
     return {
       context,
+      fieldMeasurement: latestMeasurement,
       snapshot
     };
   }

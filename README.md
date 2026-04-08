@@ -6,14 +6,14 @@ This repository contains the platform foundations and early operational data mod
 
 - `FloWiser/packages/schemas` — shared canonical telemetry schemas
 - `FloWiser/frontend` — Next.js operator, executive, and admin web app scaffold
-- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, durable storage projections, trust/state engine, workflow core, rules engine, recommendation engine, experience APIs, guarded controls execution layer, command/simulation layer, tenant access hardening, and verification/ROI reporting
+- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, durable storage projections, trust/state engine, workflow core, rules engine, recommendation engine, experience APIs, guarded controls execution layer, command/simulation layer, tenant access hardening, verification/ROI reporting, real gateway delivery contracts, and field measurement verification
 - `FloWiser/infrastructure` — AWS bootstrap and environment scaffolding
 - `FloWiser/docs` — engineering, architecture, and scope documentation
 - `.github/workflows` — CI, preview/staging, migrations, and release workflows
 
 ## Current delivery status
 
-This repo contains the first fourteen foundation epics of the delivery plan.
+This repo contains the first fifteen foundation epics of the delivery plan.
 
 ### Epic 1
 - monorepo workspace and engineering standards
@@ -100,6 +100,13 @@ This repo contains the first fourteen foundation epics of the delivery plan.
 - overview, executive, site, and per-action reporting APIs
 - ROI, payback, and capture-rate reporting derived from execution evidence
 - admin reporting inspection UI
+
+### Epic 15
+- gateway agent contracts for heartbeat, dispatch pickup, and result submission
+- queued command dispatches for real gateway pickup instead of immediate synthetic completion
+- field measurement verification inputs for energy and diesel before/after values
+- reporting preference for field M&amp;V when measured values exist
+- admin gateway and field verification inspection UI
 
 ## Quick start
 

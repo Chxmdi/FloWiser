@@ -11,6 +11,8 @@ const navItems = [
   { href: "/admin/recommendations", label: "Recommendations" },
   { href: "/admin/controls", label: "Controls" },
   { href: "/admin/commands", label: "Commands" },
+  { href: "/admin/gateways", label: "Gateways" },
+  { href: "/admin/verification", label: "Field M&V" },
   { href: "/admin/access", label: "Access" },
   { href: "/admin/reporting", label: "Reporting" }
 ];
