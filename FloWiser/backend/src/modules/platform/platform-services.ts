@@ -47,6 +47,7 @@ import { PostgresGatewayRepository } from "../gateway/postgres-gateway.repositor
 import { GatewayIntegrationService } from "../gateway/gateway-integration.service.js";
 import { PostgresFieldVerificationRepository } from "../field-verification/postgres-field-verification.repository.js";
 import { FieldVerificationService } from "../field-verification/field-verification.service.js";
+import { GatewayOperationsService } from "../operations/gateway-operations.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -128,8 +129,12 @@ const reportingService = reportingRepository
   : undefined;
 const gatewayRepository = pool ? new PostgresGatewayRepository(pool) : undefined;
 const gatewayIntegrationService = gatewayRepository && actionExecutionService
-  ? new GatewayIntegrationService(gatewayRepository, actionExecutionService)
+  ? new GatewayIntegrationService(gatewayRepository, actionExecutionService, deviceCommandingRepository)
   : undefined;
+const gatewayOperationsService =
+  deviceCommandingRepository && gatewayIntegrationService && actionExecutionService
+    ? new GatewayOperationsService(deviceCommandingRepository, gatewayIntegrationService, actionExecutionService)
+    : undefined;
 
 export const platformServices = {
   decoderRegistry,
@@ -155,5 +160,6 @@ export const platformServices = {
   fieldVerificationService,
   reportingService,
   gatewayIntegrationService,
+  gatewayOperationsService,
   persistenceEnabled
 };

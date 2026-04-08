@@ -66,6 +66,11 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `POST /gateway/agents/:agentId/heartbeat` — gateway agent heartbeat using `x-gateway-key`
 - `POST /gateway/agents/:agentId/pull-dispatches` — gateway agent pulls queued dispatches for its site
 - `POST /gateway/agents/:agentId/dispatches/:dispatchId/result` — gateway agent submits dispatch results
+- `GET /operations/gateway-health` — inspect agent freshness and pending dispatch counts
+- `GET /operations/incidents` — inspect operational incidents for transport failures
+- `GET /operations/dead-letters` — inspect exhausted dispatches
+- `POST /operations/dispatches/:dispatchId/retry` — manually reschedule one dispatch
+- `POST /operations/retries/run` — run the timeout/retry/dead-letter sweep
 - `GET /field-verification/measurements` — list captured field verification measurements
 - `GET /field-verification/recommendations/:actionId` — inspect per-action field measurements
 - `POST /field-verification/recommendations/:actionId/measure` — capture measured before/after values
@@ -89,7 +94,8 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - role and scope checks are enforced before protected routers execute
 - audit logs are captured for protected-route activity
 - gateway agent routes use `x-gateway-key` instead of actor headers
+- gateway command delivery now supports timeout sweeps, retry backoff, and dead-letter handling
 - reporting prefers measured field verification data when it exists, and falls back to execution evidence otherwise
 - raw payload inspection remains available for operator workflows
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, recommendation, dashboard, control, command, access, reporting, gateway, and field verification routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, dashboard, control, command, access, reporting, gateway, field verification, and operations routes return `501` until `DATABASE_URL` is configured

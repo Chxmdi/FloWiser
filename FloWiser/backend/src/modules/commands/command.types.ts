@@ -8,6 +8,8 @@ export const dispatchStatusSchema = z.enum([
   "simulated",
   "blocked",
   "sent",
+  "retry_scheduled",
+  "dead_lettered",
   "succeeded",
   "failed"
 ]);
@@ -70,6 +72,11 @@ export type CommandDispatchRecord = {
   requestedAt: string;
   dispatchedAt?: string;
   completedAt?: string;
+  attemptCount: number;
+  maxAttempts: number;
+  nextAttemptAt?: string;
+  deadLetterReason?: string;
+  lastError?: string;
   createdAt: string;
   updatedAt: string;
 };

@@ -98,17 +98,28 @@ export class PostgresGatewayRepository {
     return result.rowCount ? mapAgent(result.rows[0] as Record<string, unknown>) : undefined;
   }
 
-  async listPendingDispatchesForAgent(agent: GatewayAgent, limit = 20) {
+  async claimPendingDispatchesForAgent(agent: GatewayAgent, limit = 20) {
     const result = await this.pool.query(
       `
-        SELECT *
-        FROM command_dispatches
-        WHERE dispatch_status = 'sent'
-          AND tenant_id = $1
-          AND site_id = $2
-          AND ($3::text IS NULL OR device_id = $3)
-        ORDER BY requested_at ASC
-        LIMIT $4;
+        WITH candidates AS (
+          SELECT dispatch_id
+          FROM command_dispatches
+          WHERE dispatch_status IN ('sent', 'retry_scheduled')
+            AND tenant_id = $1
+            AND site_id = $2
+            AND ($3::text IS NULL OR device_id = $3)
+            AND (next_attempt_at IS NULL OR next_attempt_at <= NOW())
+          ORDER BY COALESCE(next_attempt_at, requested_at) ASC
+          LIMIT $4
+        )
+        UPDATE command_dispatches dispatch
+        SET attempt_count = dispatch.attempt_count + 1,
+            dispatch_status = 'sent',
+            next_attempt_at = NULL,
+            dispatched_at = NOW(),
+            updated_at = NOW()
+        WHERE dispatch.dispatch_id IN (SELECT dispatch_id FROM candidates)
+        RETURNING dispatch.*;
       `,
       [agent.tenantId, agent.siteId, agent.deviceId ?? null, limit]
     );
@@ -126,6 +137,7 @@ export class PostgresGatewayRepository {
         UPDATE command_dispatches
         SET dispatch_status = $2,
             result_summary = $3,
+            last_error = CASE WHEN $2 = 'failed' THEN $3 ELSE NULL END,
             completed_at = NOW(),
             updated_at = NOW()
         WHERE dispatch_id = $1
@@ -156,5 +168,19 @@ export class PostgresGatewayRepository {
       [dispatchId]
     );
     return result.rows.map((row) => mapReceipt(row as Record<string, unknown>));
+  }
+
+  async getPendingDispatchCountsBySite(siteIds?: string[]) {
+    const result = await this.pool.query(
+      `
+        SELECT site_id, COUNT(*)::INTEGER AS pending_count
+        FROM command_dispatches
+        WHERE dispatch_status IN ('sent', 'retry_scheduled')
+          AND ($1::text[] IS NULL OR site_id = ANY($1))
+        GROUP BY site_id;
+      `,
+      [siteIds?.length ? siteIds : null]
+    );
+    return Object.fromEntries(result.rows.map((row) => [row.site_id as string, Number(row.pending_count)]));
   }
 }

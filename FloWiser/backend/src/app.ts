@@ -18,6 +18,7 @@ import { accessRouter } from "./routes/access.js";
 import { reportingRouter } from "./routes/reporting.js";
 import { gatewayRouter } from "./routes/gateway.js";
 import { fieldVerificationRouter } from "./routes/field-verification.js";
+import { operationsRouter } from "./routes/operations.js";
 import { createAuditLoggingMiddleware, createProtectedRouteMiddleware } from "./modules/access/access.middleware.js";
 import { platformServices } from "./modules/platform/platform-services.js";
 
@@ -68,6 +69,7 @@ export const createApp = () => {
   app.use("/field-verification", operatorAccess, audit, fieldVerificationRouter);
   app.use("/access", viewerAccess, audit, accessRouter);
   app.use("/reporting", viewerAccess, audit, reportingRouter);
+  app.use("/operations", adminAccess, audit, operationsRouter);
 
   return app;
 };

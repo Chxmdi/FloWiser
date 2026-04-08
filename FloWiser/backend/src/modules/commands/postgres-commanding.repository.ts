@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Pool } from "pg";
+import type { DispatchDeadLetterRecord, DispatchOperationIncidentRecord } from "../operations/operations.types.js";
 import type { CommandDispatchRecord, CommandPlan, CommandTemplate, SimulationResult } from "./command.types.js";
 
 const mapTemplate = (row: Record<string, unknown>): CommandTemplate => ({
@@ -46,8 +47,34 @@ const mapDispatch = (row: Record<string, unknown>): CommandDispatchRecord => ({
   requestedAt: row.requested_at as string,
   dispatchedAt: (row.dispatched_at as string | null) ?? undefined,
   completedAt: (row.completed_at as string | null) ?? undefined,
+  attemptCount: Number(row.attempt_count ?? 0),
+  maxAttempts: Number(row.max_attempts ?? 3),
+  nextAttemptAt: (row.next_attempt_at as string | null) ?? undefined,
+  deadLetterReason: (row.dead_letter_reason as string | null) ?? undefined,
+  lastError: (row.last_error as string | null) ?? undefined,
   createdAt: row.created_at as string,
   updatedAt: row.updated_at as string
+});
+
+const mapIncident = (row: Record<string, unknown>): DispatchOperationIncidentRecord => ({
+  incidentId: row.incident_id as string,
+  dispatchId: (row.dispatch_id as string | null) ?? undefined,
+  agentId: (row.agent_id as string | null) ?? undefined,
+  incidentType: row.incident_type as string,
+  severity: row.severity as string,
+  status: row.status as string,
+  summary: row.summary as string,
+  detail: (row.detail as Record<string, unknown>) ?? {},
+  createdAt: row.created_at as string,
+  resolvedAt: (row.resolved_at as string | null) ?? undefined
+});
+
+const mapDeadLetter = (row: Record<string, unknown>): DispatchDeadLetterRecord => ({
+  deadLetterId: row.dead_letter_id as string,
+  dispatchId: row.dispatch_id as string,
+  reason: row.reason as string,
+  detail: (row.detail as Record<string, unknown>) ?? {},
+  createdAt: row.created_at as string
 });
 
 export class PostgresCommandingRepository {
@@ -117,6 +144,11 @@ export class PostgresCommandingRepository {
     requestedAt: string;
     dispatchedAt?: string;
     completedAt?: string;
+    attemptCount?: number;
+    maxAttempts?: number;
+    nextAttemptAt?: string;
+    deadLetterReason?: string;
+    lastError?: string;
   }) {
     const dispatchId = randomUUID();
     const result = await this.pool.query(
@@ -124,11 +156,15 @@ export class PostgresCommandingRepository {
         INSERT INTO command_dispatches (
           dispatch_id, execution_id, action_id, template_id, tenant_id, branch_id, site_id, device_id,
           dispatch_channel, execution_mode, dispatch_status, requested_by, note, command_payload,
-          simulation_result, result_summary, requested_at, dispatched_at, completed_at, created_at, updated_at
+          simulation_result, result_summary, requested_at, dispatched_at, completed_at,
+          attempt_count, max_attempts, next_attempt_at, dead_letter_reason, last_error,
+          created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8,
           $9, $10, $11, $12, $13, $14::jsonb,
-          $15::jsonb, $16, $17, $18, $19, NOW(), NOW()
+          $15::jsonb, $16, $17, $18, $19,
+          $20, $21, $22, $23, $24,
+          NOW(), NOW()
         ) RETURNING *;
       `,
       [
@@ -150,7 +186,12 @@ export class PostgresCommandingRepository {
         input.resultSummary ?? null,
         input.requestedAt,
         input.dispatchedAt ?? null,
-        input.completedAt ?? null
+        input.completedAt ?? null,
+        input.attemptCount ?? 0,
+        input.maxAttempts ?? 3,
+        input.nextAttemptAt ?? null,
+        input.deadLetterReason ?? null,
+        input.lastError ?? null
       ]
     );
     return mapDispatch(result.rows[0] as Record<string, unknown>);
@@ -171,6 +212,11 @@ export class PostgresCommandingRepository {
             result_summary = $4,
             dispatched_at = $5,
             completed_at = $6,
+            attempt_count = $7,
+            max_attempts = $8,
+            next_attempt_at = $9,
+            dead_letter_reason = $10,
+            last_error = $11,
             updated_at = NOW()
         WHERE dispatch_id = $1
         RETURNING *;
@@ -181,7 +227,12 @@ export class PostgresCommandingRepository {
         JSON.stringify(next.simulationResult),
         next.resultSummary ?? null,
         next.dispatchedAt ?? null,
-        next.completedAt ?? null
+        next.completedAt ?? null,
+        next.attemptCount,
+        next.maxAttempts,
+        next.nextAttemptAt ?? null,
+        next.deadLetterReason ?? null,
+        next.lastError ?? null
       ]
     );
     return mapDispatch(result.rows[0] as Record<string, unknown>);
@@ -216,5 +267,143 @@ export class PostgresCommandingRepository {
   async getDispatch(dispatchId: string) {
     const result = await this.pool.query("SELECT * FROM command_dispatches WHERE dispatch_id = $1 LIMIT 1", [dispatchId]);
     return result.rowCount ? mapDispatch(result.rows[0] as Record<string, unknown>) : undefined;
+  }
+
+  async listRetryCandidates(staleBeforeIso: string, limit = 100) {
+    const result = await this.pool.query(
+      `
+        SELECT *
+        FROM command_dispatches
+        WHERE (
+          dispatch_status = 'failed'
+          OR (dispatch_status = 'retry_scheduled' AND next_attempt_at IS NOT NULL AND next_attempt_at <= $1)
+          OR (dispatch_status = 'sent' AND dispatched_at IS NOT NULL AND dispatched_at <= $1 AND completed_at IS NULL)
+        )
+        ORDER BY COALESCE(next_attempt_at, dispatched_at, requested_at) ASC
+        LIMIT $2;
+      `,
+      [staleBeforeIso, limit]
+    );
+    return result.rows.map((row) => mapDispatch(row as Record<string, unknown>));
+  }
+
+  async scheduleRetry(dispatchId: string, nextAttemptAt: string, reason: string) {
+    const dispatch = await this.getDispatch(dispatchId);
+    if (!dispatch) {
+      return undefined;
+    }
+
+    return this.updateDispatch(dispatchId, {
+      dispatchStatus: "retry_scheduled",
+      nextAttemptAt,
+      lastError: reason,
+      completedAt: undefined,
+      resultSummary: `Retry scheduled: ${reason}`
+    });
+  }
+
+  async markDeadLetter(dispatchId: string, reason: string) {
+    const dispatch = await this.getDispatch(dispatchId);
+    if (!dispatch) {
+      return undefined;
+    }
+
+    return this.updateDispatch(dispatchId, {
+      dispatchStatus: "dead_lettered",
+      deadLetterReason: reason,
+      lastError: reason,
+      nextAttemptAt: undefined,
+      completedAt: new Date().toISOString(),
+      resultSummary: `Dead-lettered: ${reason}`
+    });
+  }
+
+  async createIncident(input: {
+    dispatchId?: string;
+    agentId?: string;
+    incidentType: string;
+    severity: string;
+    status: string;
+    summary: string;
+    detail: Record<string, unknown>;
+  }) {
+    const result = await this.pool.query(
+      `
+        INSERT INTO dispatch_operation_incidents (
+          incident_id, dispatch_id, agent_id, incident_type, severity, status, summary, detail, created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8::jsonb, NOW()
+        ) RETURNING *;
+      `,
+      [
+        randomUUID(),
+        input.dispatchId ?? null,
+        input.agentId ?? null,
+        input.incidentType,
+        input.severity,
+        input.status,
+        input.summary,
+        JSON.stringify(input.detail)
+      ]
+    );
+    return mapIncident(result.rows[0] as Record<string, unknown>);
+  }
+
+  async resolveIncidentsForDispatch(dispatchId: string) {
+    const result = await this.pool.query(
+      `
+        UPDATE dispatch_operation_incidents
+        SET status = 'resolved', resolved_at = NOW()
+        WHERE dispatch_id = $1 AND status <> 'resolved'
+        RETURNING *;
+      `,
+      [dispatchId]
+    );
+    return result.rows.map((row) => mapIncident(row as Record<string, unknown>));
+  }
+
+  async listIncidents(filters: { status?: string; incidentType?: string; limit?: number }) {
+    const conditions: string[] = [];
+    const values: unknown[] = [];
+    if (filters.status) {
+      values.push(filters.status);
+      conditions.push(`status = $${values.length}`);
+    }
+    if (filters.incidentType) {
+      values.push(filters.incidentType);
+      conditions.push(`incident_type = $${values.length}`);
+    }
+    values.push(filters.limit ?? 100);
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const result = await this.pool.query(
+      `SELECT * FROM dispatch_operation_incidents ${whereClause} ORDER BY created_at DESC LIMIT $${values.length}`,
+      values
+    );
+    return result.rows.map((row) => mapIncident(row as Record<string, unknown>));
+  }
+
+  async createDeadLetter(input: { dispatchId: string; reason: string; detail: Record<string, unknown> }) {
+    const result = await this.pool.query(
+      `
+        INSERT INTO dispatch_dead_letters (
+          dead_letter_id, dispatch_id, reason, detail, created_at
+        ) VALUES (
+          $1, $2, $3, $4::jsonb, NOW()
+        ) ON CONFLICT (dispatch_id) DO UPDATE SET
+          reason = EXCLUDED.reason,
+          detail = EXCLUDED.detail
+        RETURNING *;
+      `,
+      [randomUUID(), input.dispatchId, input.reason, JSON.stringify(input.detail)]
+    );
+    return mapDeadLetter(result.rows[0] as Record<string, unknown>);
+  }
+
+  async listDeadLetters(limit = 100) {
+    const result = await this.pool.query(
+      `SELECT * FROM dispatch_dead_letters ORDER BY created_at DESC LIMIT $1`,
+      [limit]
+    );
+    return result.rows.map((row) => mapDeadLetter(row as Record<string, unknown>));
   }
 }

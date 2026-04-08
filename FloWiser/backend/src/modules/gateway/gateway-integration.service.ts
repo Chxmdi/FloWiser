@@ -2,13 +2,15 @@ import { defaultGatewayAgents } from "./default-gateway-agents.js";
 import type { GatewayDispatchResultInput, GatewayHeartbeatInput } from "./gateway.types.js";
 import { PostgresGatewayRepository } from "./postgres-gateway.repository.js";
 import type { ActionExecutionService } from "../controls/action-execution.service.js";
+import type { PostgresCommandingRepository } from "../commands/postgres-commanding.repository.js";
 
 export class GatewayIntegrationService {
   private defaultsEnsured = false;
 
   constructor(
     private readonly repository: PostgresGatewayRepository,
-    private readonly actionExecutionService: ActionExecutionService
+    private readonly actionExecutionService: ActionExecutionService,
+    private readonly commandingRepository?: PostgresCommandingRepository
   ) {}
 
   async listAgents(filters: { tenantId?: string; siteId?: string; limit?: number }) {
@@ -39,7 +41,7 @@ export class GatewayIntegrationService {
       return undefined;
     }
 
-    const dispatches = await this.repository.listPendingDispatchesForAgent(agent, limit);
+    const dispatches = await this.repository.claimPendingDispatchesForAgent(agent, limit);
     await Promise.all(
       dispatches.map((dispatch) =>
         this.repository.createReceipt({
@@ -49,7 +51,8 @@ export class GatewayIntegrationService {
           status: "sent",
           detail: {
             commandPayload: dispatch.command_payload,
-            dispatchChannel: dispatch.dispatch_channel
+            dispatchChannel: dispatch.dispatch_channel,
+            attemptCount: dispatch.attempt_count
           }
         })
       )
@@ -91,14 +94,24 @@ export class GatewayIntegrationService {
       detail: input.detail
     });
 
-    const executionId = dispatch.execution_id as string | null;
-    const executionResult = executionId
-      ? await this.actionExecutionService.completeExecution(executionId, {
-          actor: `gateway:${agent.agentId}`,
-          success: input.success,
-          resultSummary: input.resultSummary
-        }).catch(() => undefined)
-      : undefined;
+    let executionResult:
+      | Awaited<ReturnType<ActionExecutionService["completeExecution"]>>
+      | undefined;
+
+    if (input.success) {
+      const executionId = dispatch.execution_id as string | null;
+      executionResult = executionId
+        ? await this.actionExecutionService.completeExecution(executionId, {
+            actor: `gateway:${agent.agentId}`,
+            success: true,
+            resultSummary: input.resultSummary
+          }).catch(() => undefined)
+        : undefined;
+
+      if (this.commandingRepository) {
+        await this.commandingRepository.resolveIncidentsForDispatch(dispatchId).catch(() => undefined);
+      }
+    }
 
     return {
       agent,
@@ -110,6 +123,11 @@ export class GatewayIntegrationService {
   async listReceipts(dispatchId: string) {
     await this.ensureDefaults();
     return this.repository.listReceipts(dispatchId);
+  }
+
+  async getPendingDispatchCountsBySite(siteIds?: string[]) {
+    await this.ensureDefaults();
+    return this.repository.getPendingDispatchCountsBySite(siteIds);
   }
 
   private async ensureDefaults() {

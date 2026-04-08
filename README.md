@@ -6,14 +6,14 @@ This repository contains the platform foundations and early operational data mod
 
 - `FloWiser/packages/schemas` — shared canonical telemetry schemas
 - `FloWiser/frontend` — Next.js operator, executive, and admin web app scaffold
-- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, durable storage projections, trust/state engine, workflow core, rules engine, recommendation engine, experience APIs, guarded controls execution layer, command/simulation layer, tenant access hardening, verification/ROI reporting, real gateway delivery contracts, and field measurement verification
+- `FloWiser/backend` — TypeScript API, decoder framework, ingestion reliability layer, registry model, durable storage projections, trust/state engine, workflow core, rules engine, recommendation engine, experience APIs, guarded controls execution layer, command/simulation layer, tenant access hardening, verification/ROI reporting, real gateway delivery contracts, field measurement verification, and operational resilience workflows
 - `FloWiser/infrastructure` — AWS bootstrap and environment scaffolding
 - `FloWiser/docs` — engineering, architecture, and scope documentation
 - `.github/workflows` — CI, preview/staging, migrations, and release workflows
 
 ## Current delivery status
 
-This repo contains the first fifteen foundation epics of the delivery plan.
+This repo contains the first sixteen foundation epics of the delivery plan.
 
 ### Epic 1
 - monorepo workspace and engineering standards
@@ -107,6 +107,13 @@ This repo contains the first fifteen foundation epics of the delivery plan.
 - field measurement verification inputs for energy and diesel before/after values
 - reporting preference for field M&amp;V when measured values exist
 - admin gateway and field verification inspection UI
+
+### Epic 16
+- retry scheduling and dead-letter handling for gateway dispatches
+- transport timeout sweep and manual retry operations
+- gateway health and pending-dispatch visibility
+- operational incident tracking for delivery failures
+- admin operations inspection UI
 
 ## Quick start
 
