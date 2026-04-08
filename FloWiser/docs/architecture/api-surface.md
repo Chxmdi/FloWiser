@@ -43,6 +43,11 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `POST /recommendations/:actionId/approve` — approve an approval-gated action
 - `POST /recommendations/:actionId/reject` — reject an action
 - `POST /recommendations/:actionId/resolve` — mark an action resolved after follow-through
+- `GET /dashboard/overview` — operator overview KPIs, alerts, recommendations, and branch health summary
+- `GET /dashboard/branches` — branch portfolio table
+- `GET /dashboard/branches/:branchId` — branch detail experience payload
+- `GET /dashboard/sites/:siteId` — site cockpit experience payload
+- `GET /dashboard/executive` — executive portfolio summary and opportunities
 
 ## API principles
 - resource-oriented routes
@@ -52,4 +57,4 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - raw payload inspection available for decoder debugging
 - ingestion responses always return a trace id for operator triage
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, and recommendation routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, and dashboard routes return `501` until `DATABASE_URL` is configured

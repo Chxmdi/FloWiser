@@ -26,6 +26,12 @@ import { StateEngineService } from "../state/state-engine.service.js";
 import { NotificationService } from "../alerts/notification.service.js";
 import { PostgresAlertWorkflowRepository } from "../alerts/postgres-alert-workflow.repository.js";
 import { AlertWorkflowService } from "../alerts/alert-workflow.service.js";
+import { PostgresRulesRepository } from "../rules/postgres-rules.repository.js";
+import { RulesEngineService } from "../rules/rules-engine.service.js";
+import { PostgresRecommendationRepository } from "../recommendations/postgres-recommendation.repository.js";
+import { RecommendationEngineService } from "../recommendations/recommendation-engine.service.js";
+import { RootCauseService } from "../recommendations/root-cause.service.js";
+import { PostgresExperienceRepository } from "../experience/postgres-experience.repository.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -51,24 +57,32 @@ const ingestionConsumerService = new IngestionConsumerService(
 const registryService = new RegistryService(new InMemoryRegistryStore());
 
 const persistenceEnabled = isPersistenceEnabled();
+const pool = persistenceEnabled ? getDatabasePool() : undefined;
 
-const currentStateRepository = persistenceEnabled ? new PostgresCurrentStateRepository(getDatabasePool()) : undefined;
+const currentStateRepository = pool ? new PostgresCurrentStateRepository(pool) : undefined;
 
-const storageOrchestratorService = persistenceEnabled && currentStateRepository
+const storageOrchestratorService = pool && currentStateRepository
   ? new StorageOrchestratorService(
-      new PostgresRawEventStoreRepository(getDatabasePool()),
-      new PostgresNormalizedTelemetryRepository(getDatabasePool()),
+      new PostgresRawEventStoreRepository(pool),
+      new PostgresNormalizedTelemetryRepository(pool),
       new CurrentStateProjectionService(currentStateRepository),
-      new RollupProjectionService(new PostgresRollupRepository(getDatabasePool())),
+      new RollupProjectionService(new PostgresRollupRepository(pool)),
       currentStateRepository
     )
   : undefined;
 
 const stateEngineService = currentStateRepository ? new StateEngineService(currentStateRepository) : undefined;
-const alertWorkflowRepository = persistenceEnabled ? new PostgresAlertWorkflowRepository(getDatabasePool()) : undefined;
+const alertWorkflowRepository = pool ? new PostgresAlertWorkflowRepository(pool) : undefined;
 const alertWorkflowService = alertWorkflowRepository
   ? new AlertWorkflowService(alertWorkflowRepository, new NotificationService(alertWorkflowRepository))
   : undefined;
+const rulesRepository = pool ? new PostgresRulesRepository(pool) : undefined;
+const rulesEngineService = rulesRepository ? new RulesEngineService(rulesRepository) : undefined;
+const recommendationRepository = pool ? new PostgresRecommendationRepository(pool) : undefined;
+const recommendationEngineService = recommendationRepository
+  ? new RecommendationEngineService(recommendationRepository, new RootCauseService())
+  : undefined;
+const experienceRepository = pool ? new PostgresExperienceRepository(pool) : undefined;
 
 export const platformServices = {
   decoderRegistry,
@@ -84,5 +98,8 @@ export const platformServices = {
   storageOrchestratorService,
   stateEngineService,
   alertWorkflowService,
+  rulesEngineService,
+  recommendationEngineService,
+  experienceRepository,
   persistenceEnabled
 };
