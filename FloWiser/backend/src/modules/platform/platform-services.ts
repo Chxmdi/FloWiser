@@ -35,6 +35,9 @@ import { PostgresExperienceRepository } from "../experience/postgres-experience.
 import { PostgresControlsRepository } from "../controls/postgres-controls.repository.js";
 import { ExecutionGuardrailService } from "../controls/execution-guardrail.service.js";
 import { ActionExecutionService } from "../controls/action-execution.service.js";
+import { PostgresCommandingRepository } from "../commands/postgres-commanding.repository.js";
+import { SimulatedCommandExecutorService } from "../commands/simulated-command-executor.service.js";
+import { DeviceCommandingService } from "../commands/device-commanding.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -92,6 +95,16 @@ const actionExecutionService =
   controlsRepository && recommendationEngineService && executionGuardrailService
     ? new ActionExecutionService(controlsRepository, recommendationEngineService, executionGuardrailService)
     : undefined;
+const deviceCommandingRepository = pool ? new PostgresCommandingRepository(pool) : undefined;
+const deviceCommandingService =
+  deviceCommandingRepository && actionExecutionService && recommendationEngineService
+    ? new DeviceCommandingService(
+        deviceCommandingRepository,
+        actionExecutionService,
+        recommendationEngineService,
+        new SimulatedCommandExecutorService()
+      )
+    : undefined;
 
 export const platformServices = {
   decoderRegistry,
@@ -111,5 +124,6 @@ export const platformServices = {
   recommendationEngineService,
   experienceRepository,
   actionExecutionService,
+  deviceCommandingService,
   persistenceEnabled
 };

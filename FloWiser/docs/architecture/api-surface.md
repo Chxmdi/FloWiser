@@ -56,6 +56,13 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `POST /controls/executions` — create a dry-run or execution request for a recommendation
 - `POST /controls/executions/:executionId/approvals` — add an execution-specific approval
 - `POST /controls/executions/:executionId/complete` — mark a ready execution as executed or failed
+- `GET /commands/templates` — list command templates
+- `GET /commands/templates/:templateId` — inspect one command template
+- `GET /commands/dispatches` — list command dispatch logs
+- `GET /commands/dispatches/:dispatchId` — inspect one command dispatch
+- `POST /commands/executions/:executionId/plan` — create a command plan for an execution request
+- `POST /commands/executions/:executionId/simulate` — simulate a dispatch without closing the execution
+- `POST /commands/executions/:executionId/dispatch` — simulate a live dispatch path and log the outcome
 
 ## API principles
 - resource-oriented routes
@@ -65,4 +72,4 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - raw payload inspection available for decoder debugging
 - ingestion responses always return a trace id for operator triage
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, recommendation, dashboard, and control routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, dashboard, control, and command routes return `501` until `DATABASE_URL` is configured

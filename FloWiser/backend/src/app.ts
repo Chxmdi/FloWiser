@@ -13,6 +13,7 @@ import { rulesRouter } from "./routes/rules.js";
 import { recommendationsRouter } from "./routes/recommendations.js";
 import { dashboardRouter } from "./routes/dashboard.js";
 import { controlsRouter } from "./routes/controls.js";
+import { commandsRouter } from "./routes/commands.js";
 
 export const createApp = () => {
   const app = express();
@@ -39,6 +40,7 @@ export const createApp = () => {
   app.use("/recommendations", recommendationsRouter);
   app.use("/dashboard", dashboardRouter);
   app.use("/controls", controlsRouter);
+  app.use("/commands", commandsRouter);
 
   return app;
 };
