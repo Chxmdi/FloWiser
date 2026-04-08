@@ -22,6 +22,9 @@ import { operationsRouter } from "./routes/operations.js";
 import { brokerRouter } from "./routes/broker.js";
 import { observabilityRouter } from "./routes/observability.js";
 import { sreRouter } from "./routes/sre.js";
+import { infrastructureRouter } from "./routes/infrastructure.js";
+import { telemetryOpsRouter } from "./routes/telemetry-ops.js";
+import { telemetryAlertsRouter } from "./routes/telemetry-alerts.js";
 import { createAuditLoggingMiddleware, createProtectedRouteMiddleware } from "./modules/access/access.middleware.js";
 import { platformServices } from "./modules/platform/platform-services.js";
 
@@ -76,6 +79,9 @@ export const createApp = () => {
   app.use("/broker", adminAccess, audit, brokerRouter);
   app.use("/observability", adminAccess, audit, observabilityRouter);
   app.use("/sre", adminAccess, audit, sreRouter);
+  app.use("/infrastructure", adminAccess, audit, infrastructureRouter);
+  app.use("/telemetry-ops", adminAccess, audit, telemetryOpsRouter);
+  app.use("/telemetry-alerts", adminAccess, audit, telemetryAlertsRouter);
 
   return app;
 };

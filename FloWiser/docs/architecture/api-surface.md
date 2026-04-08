@@ -76,6 +76,21 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /observability/overview` — inspect current health and backlog summary
 - `GET /observability/snapshots` — inspect historical health snapshots
 - `POST /observability/capture` — capture a service health snapshot
+- `GET /infrastructure/profiles` — list external broker and telemetry infrastructure profiles
+- `GET /infrastructure/profiles/:profileId` — inspect one infrastructure profile
+- `PATCH /infrastructure/profiles/:profileId` — update infrastructure profile settings
+- `POST /infrastructure/profiles/:profileId/check` — perform an infrastructure profile health check
+- `GET /telemetry-ops/metrics` — inspect persisted metric points
+- `POST /telemetry-ops/metrics/capture` — capture metrics from current health state
+- `GET /telemetry-ops/logs` — inspect structured log entries
+- `POST /telemetry-ops/logs` — write a structured log entry
+- `GET /telemetry-ops/traces` — inspect persisted trace spans
+- `POST /telemetry-ops/traces` — write a trace span
+- `GET /telemetry-alerts/policies` — list observability alert policies
+- `GET /telemetry-alerts/policies/:policyId` — inspect one alert policy
+- `PATCH /telemetry-alerts/policies/:policyId` — update alert thresholds or severity
+- `GET /telemetry-alerts/events` — inspect alert events
+- `POST /telemetry-alerts/evaluate` — evaluate alert policies against current health state
 - `GET /sre/runbooks` — list available SRE runbooks
 - `GET /sre/executions` — inspect runbook execution history
 - `POST /sre/runbooks/:runbookKey/execute` — execute a runbook
@@ -105,7 +120,10 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - broker messages provide queue-like visibility between dispatch creation and gateway pickup
 - gateway command delivery supports timeout sweeps, retry backoff, and dead-letter handling
 - observability snapshots summarize gateway health, broker backlog, and incident load over time
+- infrastructure profiles model external brokers and telemetry backends before live infrastructure is wired
+- telemetry ops persist metrics, logs, and trace spans inside the platform for future export
+- telemetry alert policies evaluate current health state into explicit alert events
 - reporting prefers measured field verification data when it exists, and falls back to execution evidence otherwise
 - raw payload inspection remains available for operator workflows
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, recommendation, dashboard, control, command, access, reporting, gateway, field verification, operations, broker, observability, and SRE routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, dashboard, control, command, access, reporting, gateway, field verification, operations, broker, observability, infrastructure, telemetry ops, telemetry alerting, and SRE routes return `501` until `DATABASE_URL` is configured

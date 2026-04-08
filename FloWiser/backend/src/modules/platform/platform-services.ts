@@ -54,6 +54,9 @@ import { PostgresObservabilityRepository } from "../observability/postgres-obser
 import { ObservabilityService } from "../observability/observability.service.js";
 import { PostgresSreRepository } from "../sre/postgres-sre.repository.js";
 import { SreRunbookService } from "../sre/sre-runbook.service.js";
+import { PostgresTelemetryInfraRepository } from "../telemetry-infra/postgres-telemetry-infra.repository.js";
+import { ExternalTelemetryService } from "../telemetry-infra/external-telemetry.service.js";
+import { AlertingService } from "../telemetry-infra/alerting.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -149,6 +152,13 @@ const observabilityService =
   observabilityRepository && gatewayOperationsService && deviceCommandingRepository && brokerOutboxService
     ? new ObservabilityService(observabilityRepository, gatewayOperationsService, deviceCommandingRepository, brokerOutboxService)
     : undefined;
+const telemetryInfraRepository = pool ? new PostgresTelemetryInfraRepository(pool) : undefined;
+const externalTelemetryService = telemetryInfraRepository && observabilityService
+  ? new ExternalTelemetryService(telemetryInfraRepository, observabilityService)
+  : undefined;
+const alertingService = telemetryInfraRepository && observabilityService
+  ? new AlertingService(telemetryInfraRepository, observabilityService)
+  : undefined;
 const sreRepository = pool ? new PostgresSreRepository(pool) : undefined;
 const sreRunbookService = sreRepository && gatewayOperationsService && observabilityService
   ? new SreRunbookService(sreRepository, gatewayOperationsService, observabilityService)
@@ -181,6 +191,8 @@ export const platformServices = {
   gatewayIntegrationService,
   gatewayOperationsService,
   observabilityService,
+  externalTelemetryService,
+  alertingService,
   sreRunbookService,
   persistenceEnabled
 };
