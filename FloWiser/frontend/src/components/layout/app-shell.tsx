@@ -13,6 +13,9 @@ const navItems = [
   { href: "/admin/commands", label: "Commands" },
   { href: "/admin/gateways", label: "Gateways" },
   { href: "/admin/operations", label: "Operations" },
+  { href: "/admin/broker", label: "Broker" },
+  { href: "/admin/observability", label: "Observability" },
+  { href: "/admin/sre", label: "SRE" },
   { href: "/admin/verification", label: "Field M&V" },
   { href: "/admin/access", label: "Access" },
   { href: "/admin/reporting", label: "Reporting" }

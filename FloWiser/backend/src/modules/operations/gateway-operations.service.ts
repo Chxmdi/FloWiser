@@ -2,6 +2,7 @@ import type { GatewayIntegrationService } from "../gateway/gateway-integration.s
 import type { PostgresCommandingRepository } from "../commands/postgres-commanding.repository.js";
 import type { ActionExecutionService } from "../controls/action-execution.service.js";
 import type { OperationsRequestInput } from "./operations.types.js";
+import type { BrokerOutboxService } from "../broker/broker-outbox.service.js";
 
 const isoInMinutes = (minutes: number) => new Date(Date.now() + minutes * 60 * 1000).toISOString();
 const minutesSince = (timestamp?: string) =>
@@ -11,7 +12,8 @@ export class GatewayOperationsService {
   constructor(
     private readonly commandingRepository: PostgresCommandingRepository,
     private readonly gatewayIntegrationService: GatewayIntegrationService,
-    private readonly actionExecutionService: ActionExecutionService
+    private readonly actionExecutionService: ActionExecutionService,
+    private readonly brokerOutboxService?: BrokerOutboxService
   ) {}
 
   async getGatewayHealth(filters: { tenantId?: string; siteId?: string; limit?: number }) {
@@ -68,6 +70,11 @@ export class GatewayOperationsService {
       `manual retry by ${input.actor}${input.note ? `: ${input.note}` : ""}`
     );
 
+    if (this.brokerOutboxService && updated) {
+      await this.brokerOutboxService.deadLetterDispatch(dispatchId, "superseded by manual retry").catch(() => undefined);
+      await this.brokerOutboxService.republishDispatch(updated).catch(() => undefined);
+    }
+
     const incident = await this.commandingRepository.createIncident({
       dispatchId,
       incidentType: "manual_retry",
@@ -111,6 +118,9 @@ export class GatewayOperationsService {
             maxAttempts: dispatch.maxAttempts
           }
         });
+        if (this.brokerOutboxService) {
+          await this.brokerOutboxService.deadLetterDispatch(dispatch.dispatchId, reason).catch(() => undefined);
+        }
         const incident = await this.commandingRepository.createIncident({
           dispatchId: dispatch.dispatchId,
           incidentType: "dead_lettered",
@@ -146,6 +156,10 @@ export class GatewayOperationsService {
       const backoffMinutes = Math.min(60, 2 ** Math.max(1, dispatch.attemptCount));
       const nextAttemptAt = isoInMinutes(backoffMinutes);
       const updated = await this.commandingRepository.scheduleRetry(dispatch.dispatchId, nextAttemptAt, reason);
+      if (this.brokerOutboxService && updated) {
+        await this.brokerOutboxService.deadLetterDispatch(dispatch.dispatchId, reason).catch(() => undefined);
+        await this.brokerOutboxService.republishDispatch(updated).catch(() => undefined);
+      }
       const incident = await this.commandingRepository.createIncident({
         dispatchId: dispatch.dispatchId,
         incidentType: dispatch.dispatchStatus === "sent" ? "dispatch_timeout" : "dispatch_retry",

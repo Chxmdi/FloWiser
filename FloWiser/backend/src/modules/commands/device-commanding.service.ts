@@ -4,6 +4,7 @@ import { defaultCommandTemplates } from "./default-command-templates.js";
 import { PostgresCommandingRepository } from "./postgres-commanding.repository.js";
 import { SimulatedCommandExecutorService } from "./simulated-command-executor.service.js";
 import type { CommandPlan, CommandRequestInput } from "./command.types.js";
+import type { BrokerOutboxService } from "../broker/broker-outbox.service.js";
 
 export class DeviceCommandingService {
   private defaultsEnsured = false;
@@ -12,7 +13,8 @@ export class DeviceCommandingService {
     private readonly repository: PostgresCommandingRepository,
     private readonly actionExecutionService: ActionExecutionService,
     private readonly recommendationEngineService: RecommendationEngineService,
-    private readonly simulator: SimulatedCommandExecutorService
+    private readonly simulator: SimulatedCommandExecutorService,
+    private readonly brokerOutboxService?: BrokerOutboxService
   ) {}
 
   async listTemplates() {
@@ -140,8 +142,14 @@ export class DeviceCommandingService {
         simulationResult: simulation,
         resultSummary: "Queued for gateway agent pickup",
         requestedAt: timestamp,
-        dispatchedAt: timestamp
+        dispatchedAt: timestamp,
+        attemptCount: 0,
+        maxAttempts: 3
       });
+
+      if (this.brokerOutboxService) {
+        await this.brokerOutboxService.publishDispatch(dispatch);
+      }
 
       return {
         ...context,
@@ -170,7 +178,9 @@ export class DeviceCommandingService {
       resultSummary: simulation.summary,
       requestedAt: timestamp,
       dispatchedAt: timestamp,
-      completedAt: timestamp
+      completedAt: timestamp,
+      attemptCount: 1,
+      maxAttempts: 1
     });
 
     const executionResult = context.template.dispatchChannel === "manual_playbook"

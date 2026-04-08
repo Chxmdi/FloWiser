@@ -64,13 +64,21 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /gateway/agents` — list configured gateway agents
 - `GET /gateway/dispatches/:dispatchId/receipts` — inspect gateway receipt history for one dispatch
 - `POST /gateway/agents/:agentId/heartbeat` — gateway agent heartbeat using `x-gateway-key`
-- `POST /gateway/agents/:agentId/pull-dispatches` — gateway agent pulls queued dispatches for its site
+- `POST /gateway/agents/:agentId/pull-dispatches` — gateway agent pulls queued brokered dispatches for its site
 - `POST /gateway/agents/:agentId/dispatches/:dispatchId/result` — gateway agent submits dispatch results
 - `GET /operations/gateway-health` — inspect agent freshness and pending dispatch counts
 - `GET /operations/incidents` — inspect operational incidents for transport failures
 - `GET /operations/dead-letters` — inspect exhausted dispatches
 - `POST /operations/dispatches/:dispatchId/retry` — manually reschedule one dispatch
 - `POST /operations/retries/run` — run the timeout/retry/dead-letter sweep
+- `GET /broker/messages` — inspect brokered gateway delivery messages
+- `GET /broker/messages/:messageId` — inspect one broker message
+- `GET /observability/overview` — inspect current health and backlog summary
+- `GET /observability/snapshots` — inspect historical health snapshots
+- `POST /observability/capture` — capture a service health snapshot
+- `GET /sre/runbooks` — list available SRE runbooks
+- `GET /sre/executions` — inspect runbook execution history
+- `POST /sre/runbooks/:runbookKey/execute` — execute a runbook
 - `GET /field-verification/measurements` — list captured field verification measurements
 - `GET /field-verification/recommendations/:actionId` — inspect per-action field measurements
 - `POST /field-verification/recommendations/:actionId/measure` — capture measured before/after values
@@ -94,8 +102,10 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - role and scope checks are enforced before protected routers execute
 - audit logs are captured for protected-route activity
 - gateway agent routes use `x-gateway-key` instead of actor headers
-- gateway command delivery now supports timeout sweeps, retry backoff, and dead-letter handling
+- broker messages provide queue-like visibility between dispatch creation and gateway pickup
+- gateway command delivery supports timeout sweeps, retry backoff, and dead-letter handling
+- observability snapshots summarize gateway health, broker backlog, and incident load over time
 - reporting prefers measured field verification data when it exists, and falls back to execution evidence otherwise
 - raw payload inspection remains available for operator workflows
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, recommendation, dashboard, control, command, access, reporting, gateway, field verification, and operations routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, dashboard, control, command, access, reporting, gateway, field verification, operations, broker, observability, and SRE routes return `501` until `DATABASE_URL` is configured

@@ -48,6 +48,12 @@ import { GatewayIntegrationService } from "../gateway/gateway-integration.servic
 import { PostgresFieldVerificationRepository } from "../field-verification/postgres-field-verification.repository.js";
 import { FieldVerificationService } from "../field-verification/field-verification.service.js";
 import { GatewayOperationsService } from "../operations/gateway-operations.service.js";
+import { PostgresBrokerRepository } from "../broker/postgres-broker.repository.js";
+import { BrokerOutboxService } from "../broker/broker-outbox.service.js";
+import { PostgresObservabilityRepository } from "../observability/postgres-observability.repository.js";
+import { ObservabilityService } from "../observability/observability.service.js";
+import { PostgresSreRepository } from "../sre/postgres-sre.repository.js";
+import { SreRunbookService } from "../sre/sre-runbook.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -105,6 +111,8 @@ const actionExecutionService =
   controlsRepository && recommendationEngineService && executionGuardrailService
     ? new ActionExecutionService(controlsRepository, recommendationEngineService, executionGuardrailService)
     : undefined;
+const brokerRepository = pool ? new PostgresBrokerRepository(pool) : undefined;
+const brokerOutboxService = brokerRepository ? new BrokerOutboxService(brokerRepository) : undefined;
 const deviceCommandingRepository = pool ? new PostgresCommandingRepository(pool) : undefined;
 const deviceCommandingService =
   deviceCommandingRepository && actionExecutionService && recommendationEngineService
@@ -112,7 +120,8 @@ const deviceCommandingService =
         deviceCommandingRepository,
         actionExecutionService,
         recommendationEngineService,
-        new SimulatedCommandExecutorService()
+        new SimulatedCommandExecutorService(),
+        brokerOutboxService
       )
     : undefined;
 const accessRepository = pool ? new PostgresAccessRepository(pool) : undefined;
@@ -129,12 +138,21 @@ const reportingService = reportingRepository
   : undefined;
 const gatewayRepository = pool ? new PostgresGatewayRepository(pool) : undefined;
 const gatewayIntegrationService = gatewayRepository && actionExecutionService
-  ? new GatewayIntegrationService(gatewayRepository, actionExecutionService, deviceCommandingRepository)
+  ? new GatewayIntegrationService(gatewayRepository, actionExecutionService, deviceCommandingRepository, brokerOutboxService)
   : undefined;
 const gatewayOperationsService =
   deviceCommandingRepository && gatewayIntegrationService && actionExecutionService
-    ? new GatewayOperationsService(deviceCommandingRepository, gatewayIntegrationService, actionExecutionService)
+    ? new GatewayOperationsService(deviceCommandingRepository, gatewayIntegrationService, actionExecutionService, brokerOutboxService)
     : undefined;
+const observabilityRepository = pool ? new PostgresObservabilityRepository(pool) : undefined;
+const observabilityService =
+  observabilityRepository && gatewayOperationsService && deviceCommandingRepository && brokerOutboxService
+    ? new ObservabilityService(observabilityRepository, gatewayOperationsService, deviceCommandingRepository, brokerOutboxService)
+    : undefined;
+const sreRepository = pool ? new PostgresSreRepository(pool) : undefined;
+const sreRunbookService = sreRepository && gatewayOperationsService && observabilityService
+  ? new SreRunbookService(sreRepository, gatewayOperationsService, observabilityService)
+  : undefined;
 
 export const platformServices = {
   decoderRegistry,
@@ -154,6 +172,7 @@ export const platformServices = {
   recommendationEngineService,
   experienceRepository,
   actionExecutionService,
+  brokerOutboxService,
   deviceCommandingService,
   accessAuthorizationService,
   accessAuditService,
@@ -161,5 +180,7 @@ export const platformServices = {
   reportingService,
   gatewayIntegrationService,
   gatewayOperationsService,
+  observabilityService,
+  sreRunbookService,
   persistenceEnabled
 };

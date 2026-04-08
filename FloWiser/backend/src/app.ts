@@ -19,6 +19,9 @@ import { reportingRouter } from "./routes/reporting.js";
 import { gatewayRouter } from "./routes/gateway.js";
 import { fieldVerificationRouter } from "./routes/field-verification.js";
 import { operationsRouter } from "./routes/operations.js";
+import { brokerRouter } from "./routes/broker.js";
+import { observabilityRouter } from "./routes/observability.js";
+import { sreRouter } from "./routes/sre.js";
 import { createAuditLoggingMiddleware, createProtectedRouteMiddleware } from "./modules/access/access.middleware.js";
 import { platformServices } from "./modules/platform/platform-services.js";
 
@@ -70,6 +73,9 @@ export const createApp = () => {
   app.use("/access", viewerAccess, audit, accessRouter);
   app.use("/reporting", viewerAccess, audit, reportingRouter);
   app.use("/operations", adminAccess, audit, operationsRouter);
+  app.use("/broker", adminAccess, audit, brokerRouter);
+  app.use("/observability", adminAccess, audit, observabilityRouter);
+  app.use("/sre", adminAccess, audit, sreRouter);
 
   return app;
 };

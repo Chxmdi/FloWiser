@@ -3,6 +3,7 @@ import type { GatewayDispatchResultInput, GatewayHeartbeatInput } from "./gatewa
 import { PostgresGatewayRepository } from "./postgres-gateway.repository.js";
 import type { ActionExecutionService } from "../controls/action-execution.service.js";
 import type { PostgresCommandingRepository } from "../commands/postgres-commanding.repository.js";
+import type { BrokerOutboxService } from "../broker/broker-outbox.service.js";
 
 export class GatewayIntegrationService {
   private defaultsEnsured = false;
@@ -10,7 +11,8 @@ export class GatewayIntegrationService {
   constructor(
     private readonly repository: PostgresGatewayRepository,
     private readonly actionExecutionService: ActionExecutionService,
-    private readonly commandingRepository?: PostgresCommandingRepository
+    private readonly commandingRepository?: PostgresCommandingRepository,
+    private readonly brokerOutboxService?: BrokerOutboxService
   ) {}
 
   async listAgents(filters: { tenantId?: string; siteId?: string; limit?: number }) {
@@ -41,18 +43,23 @@ export class GatewayIntegrationService {
       return undefined;
     }
 
-    const dispatches = await this.repository.claimPendingDispatchesForAgent(agent, limit);
+    const messages = this.brokerOutboxService
+      ? await this.brokerOutboxService.claimMessagesForAgent(agent, limit)
+      : [];
+
+    const dispatches = messages.map((message) => message.payload);
+
     await Promise.all(
-      dispatches.map((dispatch) =>
+      messages.map((message) =>
         this.repository.createReceipt({
-          dispatchId: dispatch.dispatch_id as string,
+          dispatchId: message.dispatchId,
           agentId: agent.agentId,
           eventType: "claimed",
           status: "sent",
           detail: {
-            commandPayload: dispatch.command_payload,
-            dispatchChannel: dispatch.dispatch_channel,
-            attemptCount: dispatch.attempt_count
+            messageId: message.messageId,
+            claimCount: message.claimCount,
+            topic: message.topic
           }
         })
       )
@@ -60,6 +67,7 @@ export class GatewayIntegrationService {
 
     return {
       agent,
+      messages,
       dispatches
     };
   }
@@ -93,6 +101,10 @@ export class GatewayIntegrationService {
       status: input.success ? "succeeded" : "failed",
       detail: input.detail
     });
+
+    if (this.brokerOutboxService) {
+      await this.brokerOutboxService.ackDispatch(dispatchId);
+    }
 
     let executionResult:
       | Awaited<ReturnType<ActionExecutionService["completeExecution"]>>
