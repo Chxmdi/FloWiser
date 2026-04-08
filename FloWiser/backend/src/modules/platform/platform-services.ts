@@ -38,6 +38,9 @@ import { ActionExecutionService } from "../controls/action-execution.service.js"
 import { PostgresCommandingRepository } from "../commands/postgres-commanding.repository.js";
 import { SimulatedCommandExecutorService } from "../commands/simulated-command-executor.service.js";
 import { DeviceCommandingService } from "../commands/device-commanding.service.js";
+import { PostgresAccessRepository } from "../access/postgres-access.repository.js";
+import { AccessAuthorizationService } from "../access/access-authorization.service.js";
+import { AccessAuditService } from "../access/access-audit.service.js";
 
 const decoderRegistry = createDefaultDecoderRegistry();
 const rawEventArchiveService = new RawEventArchiveService(new InMemoryRawEventArchiveRepository());
@@ -105,6 +108,9 @@ const deviceCommandingService =
         new SimulatedCommandExecutorService()
       )
     : undefined;
+const accessRepository = pool ? new PostgresAccessRepository(pool) : undefined;
+const accessAuthorizationService = accessRepository ? new AccessAuthorizationService(accessRepository) : undefined;
+const accessAuditService = accessRepository ? new AccessAuditService(accessRepository) : undefined;
 
 export const platformServices = {
   decoderRegistry,
@@ -125,5 +131,7 @@ export const platformServices = {
   experienceRepository,
   actionExecutionService,
   deviceCommandingService,
+  accessAuthorizationService,
+  accessAuditService,
   persistenceEnabled
 };

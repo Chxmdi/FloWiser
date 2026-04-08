@@ -8,11 +8,9 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `GET /telemetry/decoders` — list supported decoder adapters
 - `GET /telemetry/events` — query persisted normalized telemetry events by event id, device id, time range, and quality filters
 - `POST /telemetry/decode-preview` — validate, normalize, and quality-check a raw telemetry payload
+- `POST /ingestion/process` — process a transport envelope through source validation, dedupe, decoding, ordering checks, persistence, rules evaluation, recommendation generation, and alert generation
 - `GET /raw-events/:rawEventId` — inspect an archived raw payload and parse outcome
 - `GET /raw-events` — query persisted raw events by device id and time range
-- `POST /ingestion/process` — process a transport envelope through source validation, dedupe, decoding, ordering checks, persistence, rules evaluation, recommendation generation, and alert generation
-- `GET /ingestion/dead-letter` — list dead-letter entries produced by ingestion
-- `GET /ingestion/dead-letter/:entryId` — inspect a specific dead-letter entry
 - `GET /registry/snapshot` — inspect current registry entities and bindings
 - registry CRUD and bind/remap/unbind routes
 - `GET /quality/metrics` — inspect aggregate telemetry quality metrics
@@ -63,13 +61,19 @@ FloWiser keeps the early API deliberately thin and developer-friendly.
 - `POST /commands/executions/:executionId/plan` — create a command plan for an execution request
 - `POST /commands/executions/:executionId/simulate` — simulate a dispatch without closing the execution
 - `POST /commands/executions/:executionId/dispatch` — simulate a live dispatch path and log the outcome
+- `GET /access/me` — inspect the resolved actor context from request headers
+- `GET /access/memberships` — list tenant memberships
+- `POST /access/memberships` — create a tenant membership
+- `PATCH /access/memberships/:membershipId` — update a tenant membership
+- `GET /access/audit-logs` — inspect protected-route audit logs
 
 ## API principles
 - resource-oriented routes
 - explicit versioning once the first external contract is published
 - tenant scope enforced before business logic
-- errors returned in a stable envelope
-- raw payload inspection available for decoder debugging
-- ingestion responses always return a trace id for operator triage
+- protected routes require `x-tenant-id` and `x-user-id` headers
+- role and scope checks are enforced before protected routers execute
+- audit logs are captured for protected-route activity
+- raw payload inspection remains available for operator workflows
 - registry writes must validate tenant, branch, and site ownership before data is accepted
-- persistent workflow, rules, recommendation, dashboard, control, and command routes return `501` until `DATABASE_URL` is configured
+- persistent workflow, rules, recommendation, dashboard, control, command, and access routes return `501` until `DATABASE_URL` is configured
